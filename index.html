@@ -679,7 +679,7 @@
         } else {
             entriesBox.innerHTML = evEntries.map(function(en) {
                 const editBtn = isEditable
-                    ? ' <button type="button" class="small-btn" style="padding:1px 5px;font-size:10px;background:#475569;color:#fff;" onclick="window._sitacEditCloudEntry('' + escapeHtml(en.entry_id) + '')">Modifica</button>'
+                    ? ' <button type="button" class="small-btn" style="padding:1px 5px;font-size:10px;background:#475569;color:#fff;" onclick="window._sitacEditCloudEntry(\' + escapeHtml(en.entry_id) + \')">Modifica</button>'
                     : '';
                 return '<div class="cloud-entry-card">' +
                     '<b>' + escapeHtml(en.author_name || en.author_email || "Operatore") + '</b> (' + escapeHtml(en.role || "") + '): ' +
@@ -1405,6 +1405,542 @@
     document.addEventListener("mouseup", onWordRotateEnd);
     document.addEventListener("touchmove", onWordRotateMove, { passive: false });
     document.addEventListener("touchend", onWordRotateEnd);
+
+
+    function populateSubscenarios() {
+        const scenSel = document.getElementById("scenario-select");
+        const subSel = document.getElementById("subscenario-select");
+        if (!scenSel || !subSel) return;
+        const list = SUBSCENARIOS_BY_SCENARIO[scenSel.value] || [{ value: "ALL", label: "Tutti i sottoscenari" }];
+        subSel.innerHTML = "";
+        list.forEach(function(item) {
+            const opt = document.createElement("option");
+            opt.value = item.value;
+            opt.textContent = item.label;
+            subSel.appendChild(opt);
+        });
+    }
+
+    function renderOverlayControls() {
+        const container = document.getElementById("wms-layers-list");
+        if (!container) return;
+        container.innerHTML = "";
+        OVERLAY_CONFIGS.forEach(function(cfg) {
+            const item = document.createElement("div");
+            item.className = "layer-item";
+            item.innerHTML =
+                '<div class="layer-top">' +
+                    '<label><input type="checkbox" id="wms-chk-' + cfg.id + '"' + (cfg.defaultOn ? ' checked' : '') + '> ' + escapeHtml(cfg.label) + '</label>' +
+                '</div>' +
+                '<div class="layer-op-row">' +
+                    '<span>Opacita: <b id="wms-op-val-' + cfg.id + '">' + Math.round(cfg.defaultOpacity * 100) + '%</b></span>' +
+                    '<input type="range" id="wms-op-' + cfg.id + '" min="0.1" max="1" step="0.05" value="' + cfg.defaultOpacity + '">' +
+                '</div>';
+            container.appendChild(item);
+
+            const chk = item.querySelector("#wms-chk-" + cfg.id);
+            const rng = item.querySelector("#wms-op-" + cfg.id);
+            const valSpan = item.querySelector("#wms-op-val-" + cfg.id);
+
+            chk.addEventListener("change", function() {
+                if (!map || typeof L === "undefined") return;
+                if (this.checked) {
+                    if (!overlayRegistry[cfg.id]) {
+                        overlayRegistry[cfg.id] = L.tileLayer.wms(cfg.url, {
+                            layers: cfg.wmsLayers || "0",
+                            format: "image/png",
+                            transparent: true,
+                            opacity: parseFloat(rng.value) || cfg.defaultOpacity,
+                            attribution: "Geoportale Lombardia"
+                        });
+                    }
+                    overlayRegistry[cfg.id].setOpacity(parseFloat(rng.value) || cfg.defaultOpacity);
+                    overlayRegistry[cfg.id].addTo(map);
+                    registraLog("Attivato layer: " + cfg.label);
+                } else if (overlayRegistry[cfg.id]) {
+                    map.removeLayer(overlayRegistry[cfg.id]);
+                    registraLog("Disattivato layer: " + cfg.label);
+                }
+            });
+
+            rng.addEventListener("input", function() {
+                const op = parseFloat(this.value) || 0.7;
+                valSpan.textContent = Math.round(op * 100) + "%";
+                if (overlayRegistry[cfg.id]) {
+                    overlayRegistry[cfg.id].setOpacity(op);
+                }
+            });
+        });
+    }
+
+    function buildSymbolGraphicHtml(sym, stato, scale, stretchX, stretchY, rot) {
+        const w = (sym.size && sym.size[0]) ? sym.size[0] : 46;
+        const h = (sym.size && sym.size[1]) ? sym.size[1] : 22;
+        const isPlanned = (stato === "PLANNED");
+        const borderStyle = sym.borderStyle || (isPlanned ? "dashed" : "solid");
+        const borderWidth = sym.borderWidth || "2px";
+        const col = sym.col || "#c0392b";
+        const sx = (scale || 1) * (stretchX || 1);
+        const sy = (scale || 1) * (stretchY || 1);
+        const rDeg = rot || 0;
+        const transformCss = "transform: rotate(" + rDeg + "deg) scale(" + sx.toFixed(3) + ", " + sy.toFixed(3) + ");";
+
+        if (sym.svgType === "WATER") {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 24 24">' +
+                '<path d="M12 2 C12 2 5 10 5 15 a7 7 0 0 0 14 0 C19 10 12 2 12 2z" fill="' + (isPlanned ? "#ffffff" : col) + '" stroke="' + col + '" stroke-width="2" ' + (isPlanned ? 'stroke-dasharray="3,2"' : '') + '/>' +
+                '</svg></div>';
+        }
+        if (sym.svgType === "WATER_HELI") {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 28 28">' +
+                '<circle cx="14" cy="14" r="12" fill="#ffffff" stroke="' + col + '" stroke-width="2" ' + (isPlanned ? 'stroke-dasharray="3,2"' : '') + '/>' +
+                '<text x="14" y="18" text-anchor="middle" font-size="11" font-weight="bold" fill="' + col + '">H2O</text>' +
+                '</svg></div>';
+        }
+        if (sym.svgType === "HELIPAD") {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 26 26">' +
+                '<circle cx="13" cy="13" r="11" fill="#ffffff" stroke="' + col + '" stroke-width="2.5" ' + (isPlanned ? 'stroke-dasharray="3,2"' : '') + '/>' +
+                '<text x="13" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="' + col + '">H</text>' +
+                '</svg></div>';
+        }
+        if (sym.svgType === "SENSITIVE" || sym.svgType === "WUI") {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 28 28">' +
+                '<polygon points="14,2 26,24 2,24" fill="' + (isPlanned ? "#ffffff" : col) + '" stroke="' + col + '" stroke-width="2.2" ' + (isPlanned ? 'stroke-dasharray="3,2"' : '') + '/>' +
+                '<text x="14" y="21" text-anchor="middle" font-size="12" font-weight="bold" fill="' + (isPlanned ? col : "#ffffff") + '">!</text>' +
+                '</svg></div>';
+        }
+        if (sym.svgType === "ORIGIN") {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 28 28">' +
+                '<circle cx="14" cy="14" r="10" fill="rgba(231,76,60,0.25)" stroke="' + col + '" stroke-width="2.5"/>' +
+                '<circle cx="14" cy="14" r="4" fill="' + col + '"/>' +
+                '</svg></div>';
+        }
+        if (sym.svgType === "ARROW_MAIN" || sym.svgType === "ARROW_FAST" || sym.svgType === "ARROW_SLOW") {
+            const dash = sym.svgType === "ARROW_SLOW" ? 'stroke-dasharray="4,3"' : (sym.svgType === "ARROW_FAST" ? 'stroke-dasharray="7,2"' : '');
+            const sw = sym.svgType === "ARROW_MAIN" ? "4" : "2.5";
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 54 26">' +
+                '<line x1="4" y1="13" x2="40" y2="13" stroke="' + col + '" stroke-width="' + sw + '" ' + dash + '/>' +
+                '<polygon points="40,6 52,13 40,20" fill="' + col + '"/>' +
+                '</svg></div>';
+        }
+        if (sym.svgType === "FIRE_FRONT") {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<svg width="' + w + '" height="' + h + '" viewBox="0 0 54 24">' +
+                '<path d="M2,18 Q10,4 18,18 T34,18 T52,18" fill="none" stroke="' + col + '" stroke-width="3" ' + (isPlanned ? 'stroke-dasharray="4,2"' : '') + '/>' +
+                '</svg></div>';
+        }
+
+        const labelTxt = escapeHtml(sym.sigla || sym.tag || sym.id);
+        let bg = sym.customBg || (sym.solidBg ? col : "rgba(255,255,255,0.95)");
+        let fg = sym.customText || (sym.solidBg ? "#ffffff" : col);
+        let extraStyle = "";
+
+        if (sym.tipoBox === "AEREO") {
+            extraStyle = "border-top:none; border-radius:0 0 8px 8px;";
+        } else if (sym.tipoBox === "SANITARIO") {
+            extraStyle = "border-radius:12px;";
+        } else if (sym.tipoBox === "AZIONE") {
+            extraStyle = "border-radius:4px; background:" + (isPlanned ? "#ffffff" : col) + "; color:" + (isPlanned ? col : "#ffffff") + ";";
+        }
+
+        return '<div class="sitac-shape" style="' + transformCss + '">' +
+            '<div class="sym-box" style="min-width:' + w + 'px; min-height:' + h + 'px; display:flex; align-items:center; justify-content:center; border-color:' + col + '; border-style:' + borderStyle + '; border-width:' + borderWidth + '; background:' + bg + '; color:' + fg + '; ' + extraStyle + '">' +
+            labelTxt +
+            '</div></div>';
+    }
+
+    function renderSimboli() {
+        const listEl = document.getElementById("symbol-list");
+        const scenSel = document.getElementById("scenario-select");
+        const subSel = document.getElementById("subscenario-select");
+        const statoSel = document.getElementById("stato-sel");
+        const searchInp = document.getElementById("search-input");
+        const headerEl = document.getElementById("legend-header");
+        if (!listEl || !scenSel) return;
+
+        const scen = scenSel.value;
+        const sub = subSel ? subSel.value : "ALL";
+        const stato = statoSel ? statoSel.value : "PLANNED";
+        const q = (searchInp ? searchInp.value : "").trim().toLowerCase();
+
+        const filtered = SIMBOLI.filter(function(s) {
+            if (s.scenario !== scen) return false;
+            if (sub && sub !== "ALL" && s.sub !== sub) return false;
+            if (q) {
+                const hay = (s.id + " " + s.nome + " " + (s.sigla || "") + " " + (s.tag || "")).toLowerCase();
+                if (hay.indexOf(q) === -1) return false;
+            }
+            return true;
+        });
+
+        if (headerEl) {
+            headerEl.textContent = "Legenda Simboli (" + filtered.length + "):" + (isEditable ? " [Clicca per inserire]" : " [Sola lettura]");
+        }
+
+        listEl.innerHTML = "";
+        if (filtered.length === 0) {
+            listEl.innerHTML = '<div style="font-size:11px; color:#64748b; padding:6px;">Nessun simbolo trovato per i filtri selezionati.</div>';
+            return;
+        }
+
+        filtered.forEach(function(sym) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "sym-row";
+            btn.style.borderLeftColor = sym.col || "#c0392b";
+            btn.innerHTML =
+                '<div class="sym-preview">' + buildSymbolGraphicHtml(sym, stato, 0.9, 1, 1, 0) + '</div>' +
+                '<div class="sym-label"><b>#' + sym.id + '</b> ' + escapeHtml(sym.nome) + (sym.isPolygonTool ? ' <span style="color:#0369a1;font-weight:bold;">[Disegna Area]</span>' : '') + '</div>';
+
+            btn.addEventListener("click", function() {
+                if (!operatorModeActive && !sbloccaModifica()) return;
+                if (currentEventId && currentEventPassword && !unlockedEventIds[currentEventId]) {
+                    if (!promptUnlockCurrentEvent()) return;
+                }
+                if (!isEditable) return;
+
+                if (sym.isPolygonTool) {
+                    startDrawPolygon(sym.col || "#c0392b", sym.nome);
+                    return;
+                }
+
+                const center = map ? map.getCenter() : { lat: currentLat, lng: currentLng };
+                const noteTxt = (document.getElementById("note-input") ? document.getElementById("note-input").value.trim() : "");
+                markerCounter += 1;
+                const uid = "M-" + Date.now() + "-" + markerCounter;
+                addMarkerFromData({
+                    uid: uid,
+                    symId: sym.id,
+                    stato: stato,
+                    nota: noteTxt,
+                    autore: currentOperator || "Operatore",
+                    ora: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
+                    scale: 1.0,
+                    stretchX: 1.0,
+                    stretchY: 1.0,
+                    rot: 0,
+                    baseZoom: map ? map.getZoom() : 13,
+                    latlng: [center.lat, center.lng],
+                    openPopup: true
+                });
+                registraLog("Inserito #" + sym.id + " (" + sym.nome + ")" + (noteTxt ? " - " + noteTxt : ""));
+            });
+
+            listEl.appendChild(btn);
+        });
+    }
+
+    function getZoomScaleFactor(entry) {
+        if (!map || !entry || !entry.sym || !GEO_ANCHORED_IDS.has(entry.sym.id)) return 1.0;
+        const baseZ = entry.baseZoom || 13;
+        const curZ = map.getZoom();
+        return Math.pow(2, curZ - baseZ);
+    }
+
+    function buildMarkerDivIcon(entry) {
+        const zf = getZoomScaleFactor(entry);
+        const effScale = (entry.scale || 1.0) * zf;
+        const isSelected = (selectedMarkerUid === entry.uid) && isEditable;
+        const handlesHtml = isSelected
+            ? '<div class="word-rotate-handle" title="Trascina per ruotare" onmousedown="window._sitacStartRotate(event, \' + entry.uid + \')" ontouchstart="window._sitacStartRotate(event, \' + entry.uid + \')"></div>' +
+              '<div class="word-resize-handle" title="Trascina per ridimensionare/stirare" onmousedown="window._sitacStartWordResize(event, \' + entry.uid + \')" ontouchstart="window._sitacStartWordResize(event, \' + entry.uid + \')"></div>'
+            : '';
+        const captionHtml = entry.nota ? '<div class="sitac-caption">' + escapeHtml(entry.nota) + '</div>' : '';
+        const html =
+            '<div class="sitac-wrapper' + (isSelected ? ' selected-item' : '') + '" onclick="window._sitacSelectMarker(\' + entry.uid + \')">' +
+                handlesHtml +
+                buildSymbolGraphicHtml(entry.sym, entry.stato, effScale, entry.stretchX || 1.0, entry.stretchY || 1.0, entry.rot || 0) +
+                captionHtml +
+            '</div>';
+
+        return L.divIcon({
+            className: "sitac-icon",
+            html: html,
+            iconSize: [70, 42],
+            iconAnchor: [35, 21]
+        });
+    }
+
+    function getMarkerPopupHtml(entry) {
+        const ll = entry.marker ? entry.marker.getLatLng() : { lat: currentLat, lng: currentLng };
+        let html =
+            '<div style="min-width:210px; font-size:12px;">' +
+                '<b>#' + entry.sym.id + ' - ' + escapeHtml(entry.sym.nome) + '</b><br>' +
+                '<span style="font-size:10px; color:#475569;">Stato: ' + (entry.stato === "ACTIVE" ? "Attivo / Effettuata" : "Previsto / Prevista") +
+                ' &bull; ' + escapeHtml(entry.autore || "Operatore") + (entry.ora ? ' (' + escapeHtml(entry.ora) + ')' : '') + '</span><br>' +
+                '<span style="font-size:10px; color:#334155;">Coord: ' + ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5) + '</span>';
+
+        if (entry.nota) {
+            html += '<div style="margin-top:4px; padding:3px 5px; background:#f1f5f9; border-radius:3px;"><b>Nota:</b> ' + escapeHtml(entry.nota) + '</div>';
+        }
+
+        if (isEditable) {
+            html +=
+                '<div class="popup-ctrl">' +
+                    '<div class="popup-ctrl-row">' +
+                        '<span>Nota:</span>' +
+                       '<input type="text" id="pop-note-' + entry.uid + '" value="' + escapeHtml(entry.nota || "") + '" placeholder="Testo etichetta...">' +
+                    '</div>' +
+                    '<div class="popup-ctrl-row">' +
+                        '<span>Rotazione (' + (entry.rot || 0) + '&deg;):</span>' +
+                        '<input type="range" min="0" max="359" value="' + (entry.rot || 0) + '" oninput="window._sitacUpdateMarkerProp(\'' + entry.uid + '\', \'rot\', this.value)">' +
+                    '</div>' +
+                    '<div class="popup-ctrl-row">' +
+                        '<span>Scala (' + Math.round((entry.scale || 1) * 100) + '%):</span>' +
+                        '<input type="range" min="0.5" max="3" step="0.1" value="' + (entry.scale || 1) + '" oninput="window._sitacUpdateMarkerProp(\'' + entry.uid + '\', \'scale\', this.value)">' +
+                    '</div>' +
+                    '<div style="display:flex; gap:4px; margin-top:5px;">' +
+                        '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSaveMarkerNote(\'' + entry.uid + '\')">Applica</button>' +
+                        '<button type="button" class="small-btn" style="flex:1; background:#d97706; color:#fff;" onclick="window._sitacToggleMarkerStato(\'' + entry.uid + '\')">Stato</button>' +
+                        '<button type="button" class="small-btn" style="background:#b91c1c; color:#fff;" onclick="window._sitacDeleteMarker(\'' + entry.uid + '\')">Elimina</button>' +
+                    '</div>' +
+                '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    function aggiornaIconaMarker(entry) {
+        if (!entry || !entry.marker) return;
+        entry.marker.setIcon(buildMarkerDivIcon(entry));
+        entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+    }
+
+    window._sitacUpdateMarkerProp = function(uid, prop, val) {
+        if (!isEditable) return;
+        const entry = markersRegistry[uid];
+        if (!entry) return;
+        entry[prop] = parseFloat(val);
+        entry.marker.setIcon(buildMarkerDivIcon(entry));
+    };
+
+    window._sitacSaveMarkerNote = function(uid) {
+        if (!isEditable) return;
+        const entry = markersRegistry[uid];
+        if (!entry) return;
+        const inp = document.getElementById("pop-note-" + uid);
+        if (inp) entry.nota = inp.value.trim();
+        aggiornaIconaMarker(entry);
+        registraLog("Aggiornata nota #" + entry.sym.id + ": " + entry.nota);
+    };
+
+    window._sitacToggleMarkerStato = function(uid) {
+        if (!isEditable) return;
+        const entry = markersRegistry[uid];
+        if (!entry) return;
+        entry.stato = (entry.stato === "ACTIVE") ? "PLANNED" : "ACTIVE";
+        aggiornaIconaMarker(entry);
+        registraLog("Cambiato stato #" + entry.sym.id + " in " + entry.stato);
+    };
+
+    window._sitacDeleteMarker = function(uid) {
+        if (!isEditable) return;
+        const entry = markersRegistry[uid];
+        if (!entry) return;
+        if (map && entry.marker) map.removeLayer(entry.marker);
+        delete markersRegistry[uid];
+        if (selectedMarkerUid === uid) selectedMarkerUid = null;
+        registraLog("Rimosso simbolo #" + entry.sym.id);
+    };
+
+    function addMarkerFromData(opts) {
+        if (!map || typeof L === "undefined") return null;
+        const sym = SIMBOLI.find(function(s) { return s.id === Number(opts.symId); }) || SIMBOLI[0];
+        const uid = opts.uid || ("M-" + Date.now() + "-" + (++markerCounter));
+        const entry = {
+            uid: uid,
+            sym: sym,
+            stato: opts.stato || "PLANNED",
+            nota: opts.nota || "",
+            autore: opts.autore || currentOperator || "Operatore",
+            ora: opts.ora || "",
+            scale: opts.scale || 1.0,
+            stretchX: opts.stretchX || 1.0,
+            stretchY: opts.stretchY || 1.0,
+            rot: opts.rot || 0,
+            baseZoom: opts.baseZoom || map.getZoom(),
+            marker: null
+        };
+
+        const marker = L.marker(opts.latlng, {
+            draggable: isEditable,
+            icon: buildMarkerDivIcon(entry)
+        }).addTo(map);
+
+        entry.marker = marker;
+        markersRegistry[uid] = entry;
+
+        marker.bindPopup(getMarkerPopupHtml(entry));
+        marker.on("click", function() {
+            window._sitacSelectMarker(uid);
+            marker.setPopupContent(getMarkerPopupHtml(entry));
+        });
+        marker.on("dragend", function() {
+            const pos = marker.getLatLng();
+            marker.setPopupContent(getMarkerPopupHtml(entry));
+            registraLog("Spostato #" + sym.id + " a " + pos.lat.toFixed(5) + ", " + pos.lng.toFixed(5));
+        });
+
+        if (opts.openPopup) {
+            selectedMarkerUid = uid;
+            aggiornaIconaMarker(entry);
+            marker.openPopup();
+        }
+        return entry;
+    }
+
+    let polyDrawColor = "#c0392b";
+    let polyDrawLabel = "Area perimetrata";
+
+    function startDrawPolygon(color, label) {
+        if (!isEditable || !map) return;
+        cancelDrawPolygon();
+        isDrawingPoly = true;
+        polyPoints = [];
+        polyDrawColor = color || "#c0392b";
+        polyDrawLabel = label || "Area perimetrata";
+        setDiag("DISEGNO POLIGONO ATTIVO: clicca sulla mappa per aggiungere vertici, doppio clic per chiudere.", false);
+    }
+
+    function updatePolyDraft() {
+        if (!map || typeof L === "undefined") return;
+        if (polyDraftLayer) {
+            map.removeLayer(polyDraftLayer);
+            polyDraftLayer = null;
+        }
+        if (polyPoints.length === 1) {
+            polyDraftLayer = L.circleMarker(polyPoints[0], { radius: 5, color: polyDrawColor }).addTo(map);
+        } else if (polyPoints.length >= 2) {
+            polyDraftLayer = L.polygon(polyPoints, {
+                color: polyDrawColor,
+                weight: 2,
+                dashArray: "5,5",
+                fillColor: polyDrawColor,
+                fillOpacity: 0.2
+            }).addTo(map);
+        }
+    }
+
+    function cancelDrawPolygon() {
+        isDrawingPoly = false;
+        polyPoints = [];
+        if (map && polyDraftLayer) {
+            map.removeLayer(polyDraftLayer);
+            polyDraftLayer = null;
+        }
+    }
+
+    function finishDrawPolygon() {
+        if (!isDrawingPoly) return;
+        const pts = polyPoints.slice();
+        cancelDrawPolygon();
+        setDiag("Sistema pronto | Eventi + 4 Scenari + Poligono + GPS", false);
+        if (pts.length < 3) {
+            alert("Servono almeno 3 vertici per chiudere un poligono.");
+            return;
+        }
+        const noteTxt = (document.getElementById("note-input") ? document.getElementById("note-input").value.trim() : "") || polyDrawLabel;
+        polyCounter += 1;
+        addPolygonToMap({
+            uid: "P-" + Date.now() + "-" + polyCounter,
+            num: polyCounter,
+            points: pts,
+            color: polyDrawColor,
+            nota: noteTxt,
+            scenarioLabel: document.getElementById("scenario-select").selectedOptions[0].textContent,
+            autore: currentOperator || "Operatore",
+            ora: new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }),
+            openPopup: true
+        });
+        registraLog("Disegnato poligono #" + polyCounter + ": " + noteTxt);
+    }
+
+    function getPolygonPopupContent(p) {
+        let html =
+            '<div style="min-width:190px; font-size:12px;">' +
+                '<b>Poligono #' + p.num + '</b><br>' +
+                '<span>' + escapeHtml(p.nota || p.scenarioLabel || "Area") + '</span><br>' +
+                '<span style="font-size:10px; color:#475569;">Autore: ' + escapeHtml(p.autore || "Operatore") + (p.ora ? ' (' + escapeHtml(p.ora) + ')' : '') + '</span>';
+        if (isEditable) {
+            html +=
+                '<div class="popup-ctrl">' +
+                    '<input type="text" id="poly-note-' + p.uid + '" value="' + escapeHtml(p.nota || "") + '">' +
+                    '<div style="display:flex; gap:4px;">' +
+                        '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSavePolyNote(\'' + p.uid + '\')">Salva Nota</button>' +
+			'<button type="button" class="small-btn" style="background:#b91c1c; color:#fff;" onclick="window._sitacDeletePoly(\'' + p.uid + '\')">Elimina</button>' +
+                    '</div>' +
+                '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    window._sitacSavePolyNote = function(uid) {
+        if (!isEditable || !polygonsRegistry[uid]) return;
+        const p = polygonsRegistry[uid];
+        const inp = document.getElementById("poly-note-" + uid);
+        if (inp) p.nota = inp.value.trim();
+        p.layer.setPopupContent(getPolygonPopupContent(p));
+        registraLog("Aggiornata nota poligono #" + p.num);
+    };
+
+    window._sitacDeletePoly = function(uid) {
+        if (!isEditable || !polygonsRegistry[uid]) return;
+        const p = polygonsRegistry[uid];
+        if (map && p.layer) map.removeLayer(p.layer);
+        delete polygonsRegistry[uid];
+        registraLog("Eliminato poligono #" + p.num);
+    };
+
+    function addPolygonToMap(opts) {
+        if (!map || typeof L === "undefined" || !opts.points || opts.points.length < 3) return null;
+        const uid = opts.uid || ("P-" + Date.now() + "-" + (++polyCounter));
+        const pObj = {
+            uid: uid,
+            num: opts.num || polyCounter,
+            points: opts.points,
+            color: opts.color || "#c0392b",
+            nota: opts.nota || "",
+            scenarioLabel: opts.scenarioLabel || "",
+            autore: opts.autore || "Operatore",
+            ora: opts.ora || "",
+            layer: null
+        };
+        const layer = L.polygon(pObj.points, {
+            color: pObj.color,
+            weight: 2.5,
+            fillColor: pObj.color,
+            fillOpacity: 0.22
+        }).addTo(map);
+        pObj.layer = layer;
+        polygonsRegistry[uid] = pObj;
+        layer.bindPopup(getPolygonPopupContent(pObj));
+        if (opts.openPopup) layer.openPopup();
+        return pObj;
+    }
+
+    function clearMapElements() {
+        cancelDrawPolygon();
+        selectedMarkerUid = null;
+        Object.keys(markersRegistry).forEach(function(k) {
+            if (map && markersRegistry[k].marker) map.removeLayer(markersRegistry[k].marker);
+            delete markersRegistry[k];
+        });
+        Object.keys(polygonsRegistry).forEach(function(k) {
+            if (map && polygonsRegistry[k].layer) map.removeLayer(polygonsRegistry[k].layer);
+            delete polygonsRegistry[k];
+        });
+        markerCounter = 0;
+        polyCounter = 0;
+        logsRegistry.length = 0;
+        const logBox = document.getElementById("log-container");
+        if (logBox) logBox.textContent = "Nessuna modifica registrata.";
+    }
 
     function initApp() {
         document.getElementById("btn-toggle-intro").addEventListener("click", function() {
