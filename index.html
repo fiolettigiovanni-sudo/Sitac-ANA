@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SITAC OPERATIVO _ANA VALLECAMONICA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
+    <style>
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: Arial, sans-serif; background: #cbd5e1; }
+        #map { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #e2e8f0; }
+
+        /* Banner presentazione allargato in alto a sinistra */
+        #presentation-banner {
+            position: fixed; top: 10px; left: 50px; z-index: 1000;
+            background: rgba(20, 40, 29, 0.96); color: #f8fafc;
+            padding: 12px 14px; border-radius: 10px; width: 470px; max-width: calc(100vw - 415px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4); border-left: 5px solid #eab308;
+            font-size: 12px; line-height: 1.4;
+        }
+        #presentation-banner .title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: bold; font-size: 13px; color: #fde047; }
+        #presentation-banner .sub-row { margin-top: 3px; font-size: 11px; font-weight: bold; color: #fcd34d; letter-spacing: 0.3px; }
+        #presentation-banner button { background: rgba(255,255,255,0.16); color: #fff; border: 1px solid rgba(255,255,255,0.35); border-radius: 4px; padding: 2px 7px; font-size: 10px; cursor: pointer; }
+        .banner-notes-box { margin-top: 8px; padding-top: 7px; border-top: 1px dashed rgba(255,255,255,0.28); display: flex; gap: 10px; align-items: flex-start; }
+        .logo-slot {
+            min-width: 68px; height: 54px; border: 1px dashed #fde047; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            font-size: 10px; font-weight: bold; color: #fde047; background: rgba(255,255,255,0.06); padding: 4px; box-sizing: border-box;
+        }
+        .notes-area { flex: 1; font-size: 11px; color: #e2e8f0; }
+
+        /* Pannello comandi a destra */
+        #toolbar {
+            position: fixed; top: 10px; right: 10px; z-index: 1000;
+            background: #fff; padding: 10px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35); width: 356px; max-height: 94vh; overflow-y: auto;
+        }
+        h3 { margin: 0 0 6px 0; font-size: 14px; line-height: 1.25; }
+        #diag-banner { font-size: 10px; padding: 4px 6px; border-radius: 4px; margin-bottom: 8px; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+        button.action-btn { width: 100%; margin-bottom: 4px; padding: 6px 8px; background: #2c3e50; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        button.small-btn { padding: 4px 6px; font-size: 11px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .box-section { background: #f8f9fa; padding: 7px; border-radius: 4px; margin-bottom: 8px; border: 1px solid #ddd; font-size: 12px; }
+        input[type="password"], input[type="text"], select { width: 100%; box-sizing: border-box; padding: 5px; margin-top: 4px; margin-bottom: 5px; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+        input[type="color"] { width: 46px; height: 26px; border: 1px solid #ccc; border-radius: 4px; padding: 1px; cursor: pointer; background: #fff; }
+
+        .wms-dropdown-panel { margin-top: 5px; padding: 6px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; max-height: 210px; overflow-y: auto; }
+        .layer-item { border-bottom: 1px solid #e5e7eb; padding: 4px 0; }
+        .layer-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .layer-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11px; }
+        .layer-top label { display: flex; align-items: center; gap: 5px; cursor: pointer; flex: 1; font-weight: bold; }
+        .layer-op-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 2px; font-size: 10px; color: #4b5563; }
+        .layer-op-row input[type="range"] { width: 110px; }
+
+        #symbol-list { max-height: 210px; min-height: 60px; overflow-y: auto; border: 1px solid #e0e0e0; padding: 4px; border-radius: 4px; background: #fafafa; }
+        .sym-row {
+            display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box;
+            margin-bottom: 4px; padding: 5px; background: #fff; border: 1px solid #dcdcdc;
+            border-left-width: 5px; border-radius: 4px; cursor: pointer; text-align: left; font-size: 11px;
+        }
+        .sym-row:hover { background: #f1f5f9; }
+        .sym-preview { min-width: 66px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sym-label { flex: 1; line-height: 1.2; color: #111827; }
+        .poly-tool-box { margin-top: 6px; padding: 6px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; }
+        #log-container { margin-top: 6px; font-size: 11px; background: #1e1e1e; color: #0f0; padding: 6px; border-radius: 4px; max-height: 105px; overflow-y: auto; }
+        .edit-only-box.locked { opacity: 0.55; pointer-events: none; }
+        
+        .sitac-icon { overflow: visible !important; }
+        .sitac-wrapper.selected-item .sitac-shape { outline: 1.5px dashed #2563eb; outline-offset: 2px; }
+        
+        .word-rotate-handle {
+            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+            width: 13px; height: 13px; background: #16a34a; border: 2px solid #ffffff;
+            border-radius: 50%; cursor: grab; z-index: 2500;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.45); touch-action: none;
+        }
+        .word-rotate-handle:active { cursor: grabbing; }
+        .word-resize-handle {
+            position: absolute; right: -7px; bottom: -7px; width: 13px; height: 13px;
+            background: #2563eb; border: 2px solid #ffffff; border-radius: 2px;
+            cursor: nwse-resize; z-index: 2500; box-shadow: 0 1px 3px rgba(0,0,0,0.45);
+            touch-action: none;
+        }
+
+        .sitac-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .sitac-shape { display: flex; align-items: center; justify-content: center; transform-origin: center center; }
+        .sym-box { border: 2px solid #c0392b; background: rgba(255,255,255,0.94); color: #c0392b; font-size: 9px; font-weight: bold; padding: 2px 4px; text-align: center; line-height: 1.1; white-space: nowrap; }
+        .sitac-caption {
+            margin-top: 2px; padding: 1px 4px; background: rgba(17,24,39,0.88); color: #fff;
+            border-radius: 3px; font-size: 10px; font-weight: bold; white-space: nowrap; pointer-events: none;
+        }
+        .popup-ctrl { margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb; font-size: 11px; }
+        .popup-ctrl-row { display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 4px; }
+        .popup-ctrl input[type="range"] { width: 95px; vertical-align: middle; }
+        .popup-ctrl input[type="text"] { width: 100%; box-sizing: border-box; padding: 3px 5px; font-size: 11px; margin: 2px 0 4px 0; }
+        .legal-note { margin-top: 7px; font-size: 10px; color: #475569; line-height: 1.35; }
+        .gps-share-box { font-size: 11px; margin-top: 4px; }
+        .gps-coords-line { font-size: 10px; color: #334155; background: #eef2ff; padding: 4px 6px; border-radius: 4px; margin-top: 4px; word-break: break-all; }
+        .event-meta { font-size: 10px; color: #475569; margin-top: 3px; }
+
+        /* Schermata iniziale / Login / Accesso */
+        #entry-gate {
+            position: fixed; inset: 0; z-index: 5000;
+            background: linear-gradient(135deg, rgba(15, 35, 24, 0.96), rgba(30, 58, 42, 0.94));
+            display: flex; align-items: center; justify-content: center; padding: 16px;
+        }
+        .gate-card {
+            background: #ffffff; color: #111827; width: 100%; max-width: 470px;
+            border-radius: 12px; padding: 20px 22px; box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+            border-top: 6px solid #eab308;
+        }
+        .gate-card h2 { margin: 0 0 4px 0; font-size: 18px; color: #14281d; }
+        .gate-card .gate-sub { font-size: 12px; font-weight: bold; color: #b45309; margin-bottom: 10px; }
+        .gate-card p { font-size: 12px; color: #374151; line-height: 1.45; margin: 0 0 12px 0; }
+        .gate-field { margin-bottom: 8px; }
+        .gate-field label { display: block; font-size: 11px; font-weight: bold; color: #374151; margin-bottom: 2px; }
+        .gate-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+        .gate-btn-primary {
+            width: 100%; padding: 9px 12px; background: #15803d; color: #fff;
+            border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;
+        }
+        .gate-btn-secondary {
+            width: 100%; padding: 8px 12px; background: #e2e8f0; color: #1e293b;
+            border: 1px solid #cbd5e1; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer;
+        }
+        .cloud-entry-card {
+            background: #fff; border: 1px solid #cbd5e1; border-radius: 4px;
+            padding: 5px 6px; margin-top: 4px; font-size: 11px;
+        }
+        .cloud-mod-alert {
+            background: #fff3cd; border-left: 3px solid #d97706;
+            padding: 4px 6px; margin-top: 4px; font-size: 10px; border-radius: 2px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="entry-gate">
+    <div class="gate-card">
+        <h2>SITAC OPERATIVO &bull; ANA VALLECAMONICA</h2>
+        <div class="gate-sub">TEAM FORMAZIONE ANA &mdash; ARCHIVIO EVENTI ONLINE</div>
+        <p>
+            La <b>sola lettura</b> è libera per tutti. Chi crea un nuovo evento sceglie la <b>propria password dedicata a quell'evento</b>; per modificare un evento protetto serve la password di quell'evento.
+        </p>
+        <div class="gate-field">
+            <label for="gate-name">Nome e Cognome / Qualifica (per chi crea o modifica)</label>
+            <input type="text" id="gate-name" placeholder="Nome e Cognome...">
+        </div>
+        <div class="gate-field">
+            <label for="gate-email">Email Google (per tracciamento autori e modifiche)</label>
+            <input type="text" id="gate-email" placeholder="nome@gmail.com">
+        </div>
+        <div class="gate-field">
+            <label for="gate-role">Ruolo operativo</label>
+            <input type="text" id="gate-role" value="DOS / Responsabile" placeholder="DOS / Responsabile / Caposquadra...">
+        </div>
+        <div class="gate-actions">
+            <button type="button" class="gate-btn-primary" id="btn-gate-edit">Entra come Operatore (Crea / Modifica Eventi)</button>
+            <button type="button" class="gate-btn-secondary" id="btn-gate-readonly">Entra in Sola Lettura Libera</button>
+        </div>
+    </div>
+</div>
+
+
+<div id="map"></div>
+
+<div id="presentation-banner">
+    <div class="title-row">
+        <span>ANA Vallecamonica &bull; SITAC Operativo</span>
+        <button type="button" id="btn-toggle-intro">Riduci</button>
+    </div>
+    <div class="sub-row">TEAM FORMAZIONE ANA</div>
+    <div id="intro-body">
+        <div style="margin-top:4px;">
+            Supporto cartografico e tattico per volontari e coordinamento su <b>AIB</b>, <b>Rischio idrogeologico/idraulico</b>, <b>Ricerca e soccorso</b> e <b>Logistica</b>. Consultazione libera; modifica riservata agli operatori abilitati.
+        </div>
+        <div class="banner-notes-box">
+            <div class="logo-slot">LOGO<br>ANA / PC</div>
+            <div class="notes-area">
+                <div><b>Note operative e formazione:</b> spazio dedicato a comunicazioni di squadra, canali radio, riferimenti addestrativi e avvisi di emergenza.</div>
+                <div style="margin-top:3px; color:#fde68a;">Strumento di supporto e simulazione/coordinamento: non sostituisce i canali ufficiali di comando e allertamento.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toolbar">
+    <h3>SITAC OPERATIVO _ANA VALLECAMONICA</h3>
+    <div id="diag-banner">Caricamento...</div>
+
+    <div class="box-section" id="auth-box">
+        <span id="status-lock">Stato: <b>Sola Lettura Libera</b></span>
+        <div id="login-area">
+            <input type="text" id="op-name-input" placeholder="Nome / Qualifica operatore...">
+            <input type="text" id="op-email-input" placeholder="Email Google (es. nome@gmail.com)...">
+            <input type="text" id="op-role-input" value="DOS / Responsabile" placeholder="Ruolo (DOS, Caposquadra...)">
+            <button type="button" class="action-btn" id="btn-unlock" style="background:#27ae60; margin-bottom:0;">Abilita Modalità Operatore</button>
+        </div>
+        <div id="logout-area" style="display:none;">
+            <div id="op-active-label" style="margin-bottom:2px; font-weight:bold;"></div>
+            <div id="op-meta-label" style="font-size:10px; color:#475569; margin-bottom:2px;"></div>
+            <div id="event-lock-badge" style="font-size:10px; font-weight:bold; color:#b45309; margin-bottom:4px;"></div>
+            <button type="button" class="action-btn" id="btn-unlock-event" style="background:#0369a1; display:none;">Inserisci Password Evento per Modificare</button>
+            <button type="button" class="action-btn" id="btn-lock" style="background:#7f8c8d; margin-bottom:0;">Torna a Sola Lettura Libera</button>
+        </div>
+    </div>
+
+    <div class="box-section" id="event-manager-box">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+            <b>Eventi Online (Condivisi):</b>
+            <button type="button" class="small-btn" id="btn-cloud-sync" style="background:#0369a1; color:#fff;">Aggiorna da Cloud</button>
+        </div>
+        <div id="cloud-sync-status" class="event-meta">Connessione all'archivio online...</div>
+        <select id="event-select">
+            <option value="">-- Seleziona un evento online --</option>
+        </select>
+        <div id="event-active-info" class="event-meta">Nessun evento caricato.</div>
+        <div class="edit-only-box locked" id="event-edit-controls" style="margin-top:5px;">
+            <input type="text" id="event-title-input" placeholder="Titolo evento (es. Esercitazione Corteno)..." style="margin-bottom:4px;">
+            <input type="password" id="event-pwd-input" placeholder="Password dedicata a questo evento (chi crea sceglie la sua)..." style="margin-bottom:4px;">
+            <label style="display:flex; align-items:center; gap:5px; font-size:11px; margin-bottom:4px; cursor:pointer;">
+                <input type="checkbox" id="event-is-test" checked style="width:auto; margin:0;">
+                Etichetta [TEST / PROVA]
+            </label>
+            <div style="display:flex; gap:4px;">
+                <button type="button" class="small-btn" id="btn-event-new" style="flex:1; background:#0369a1; color:#fff;">Nuovo Evento</button>
+                <button type="button" class="small-btn" id="btn-event-save" style="flex:1; background:#15803d; color:#fff;">Salva Online</button>
+                <button type="button" class="small-btn" id="btn-event-del" style="background:#b91c1c; color:#fff;">Chiudi / Rimuovi</button>
+            </div>
+        </div>
+        <div id="cloud-collab-box" style="margin-top:6px; border-top:1px dashed #cbd5e1; padding-top:5px; display:none;">
+            <b>Interventi Operativi sull'Evento:</b>
+            <div id="cloud-entries-list" style="max-height:110px; overflow-y:auto; margin-top:3px;"></div>
+            <div class="edit-only-box locked" id="cloud-entry-add-box" style="margin-top:4px;">
+                <input type="text" id="cloud-entry-input" placeholder="Aggiungi intervento / aggiornamento squadra...">
+                <button type="button" class="small-btn" id="btn-cloud-add-entry" style="width:100%; background:#0f766e; color:#fff;">Registra Intervento Online</button>
+            </div>
+            <b style="display:block; margin-top:6px;">Cronologia Modifiche Altrui:</b>
+            <div id="cloud-history-list" style="max-height:95px; overflow-y:auto; margin-top:2px;"></div>
+        </div>
+        <div style="display:flex; gap:4px; margin-top:5px;">
+            <button type="button" class="small-btn" id="btn-event-export" style="flex:1; background:#334155; color:#fff;">Esporta JSON</button>
+            <button type="button" class="small-btn" id="btn-event-import" style="flex:1; background:#475569; color:#fff;">Importa JSON</button>
+            <input type="file" id="event-import-file" accept=".json,application/json" style="display:none;">
+        </div>
+    </div>
+
+    <div class="box-section">
+        <b>Posizione GPS / Condivisione:</b>
+        <div id="gps-status" class="gps-share-box">GPS non ancora rilevato.</div>
+        <div style="display:flex; gap:4px; margin-top:4px;">
+            <button type="button" class="small-btn" id="btn-gps-locate" style="flex:1; background:#0369a1; color:#fff;">Aggiorna GPS</button>
+            <button type="button" class="small-btn" id="btn-gps-share" style="flex:1; background:#15803d; color:#fff;">Condividi / Copia Link</button>
+        </div>
+        <div id="gps-link-box" class="gps-coords-line" style="display:none;"></div>
+    </div>
+
+    <div class="box-section">
+        <b>Meteo / Vento:</b>
+        <div id="meteo-info" style="font-size:11px; margin:3px 0;">Nessun dato.</div>
+        <button type="button" class="action-btn" id="btn-meteo" style="background:#2980b9; margin-bottom:0;">Vento da GPS</button>
+    </div>
+
+    <div class="box-section" id="wms-layers-box">
+        <label for="wms-dropdown-toggle"><b>Mappe Sovrapponibili:</b></label>
+        <select id="wms-dropdown-toggle" style="margin-bottom:0;">
+            <option value="CLOSED">Chiudi elenco mappe sovrapponibili</option>
+            <option value="OPEN">Apri elenco mappe sovrapponibili (Geoportale / Trasparenza)</option>
+        </select>
+        <div id="wms-layers-list" class="wms-dropdown-panel" style="display:none;"></div>
+    </div>
+
+    <div class="box-section">
+        <label for="scenario-select"><b>Scenario:</b></label>
+        <select id="scenario-select">
+            <option value="SCENARIO_AIB">Scenario AIB - Incendi Boschivi</option>
+            <option value="SCENARIO_IDRO">Scenario Idrogeologico / Frane e Alluvioni</option>
+            <option value="SCENARIO_RICERCA">Scenario Ricerca e Soccorso</option>
+            <option value="SCENARIO_LOGISTICA">Scenario Logistica e Assistenza Popolazione</option>
+        </select>
+
+        <label for="subscenario-select"><b>Sottoscenario:</b></label>
+        <select id="subscenario-select"></select>
+
+        <label for="stato-sel"><b>Stato visualizzato:</b></label>
+        <select id="stato-sel">
+            <option value="PLANNED">Previsto / Prevista</option>
+            <option value="ACTIVE">Attivo / Effettuata</option>
+        </select>
+
+        <input type="text" id="search-input" placeholder="Filtra per nome, sigla o numero...">
+
+        <div id="edit-note-box" class="edit-only-box locked" style="margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
+            <input type="text" id="note-input" placeholder="Scritta allegata (es. Squadra 12, Frana Nord)..." style="margin-bottom:0;">
+        </div>
+    </div>
+
+    <div class="box-section" style="padding:5px; margin-bottom:6px;">
+        <b id="legend-header">Legenda Simboli:</b>
+    </div>
+    <div id="symbol-list"></div>
+
+    <p style="font-size:11px; margin:6px 0 2px 0; font-weight:bold;">Registro Azioni:</p>
+    <div id="log-container">Nessuna modifica registrata.</div>
+
+    <div class="legal-note">
+        <b>Nota informativa e d'uso:</b> applicazione cartografica di supporto operativo e formativo (ANA Vallecamonica). Le cartografie di base e i layer WMS provengono da fonti esterne (Geoportale Lombardia, OpenStreetMap, Google) e Open-Meteo. Non sostituisce i sistemi ufficiali di allertamento e comando.
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
+<script>
+(function() {
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbylNmfLJC_B72_y1CAUcpQUIfX60RLNNX7CS2FiSuh1yCchYxKRyVPXZqGvatqmUg4Piw/exec";
+    const STORAGE_KEY = "sitac_ana_vallecamonica_events_v1";
+    const memoryStorage = {};
+
+    let operatorModeActive = false;
+    let isEditable = false;
+    let currentEventPassword = "";
+    const unlockedEventIds = {};
+    let currentOperator = "";
+    let currentOperatorEmail = "";
+    let currentOperatorRole = "DOS / Responsabile";
+    let cloudState = { events: [], entries: [], history: [] };
+    let currentLat = 46.16, currentLng = 10.33;
+    let hasGpsFix = false;
+    let map = null;
+    let gpsMarker = null;
+    let sharedGpsMarker = null;
+    let markerCounter = 0;
+    let polyCounter = 0;
+    let currentEventId = "";
+    const markersRegistry = {};
+    const polygonsRegistry = {};
+    const overlayRegistry = {};
+    const logsRegistry = [];
+
+    let selectedMarkerUid = null;
+    const GEO_ANCHORED_IDS = new Set([1, 2, 3, 4, 5, 11, 12, 19, 20, 21, 22, 23, 27, 28, 29, 52, 53, 54, 57, 59, 60, 61, 62, 65, 77, 78, 90, 94]);
+    let wordResizeState = null;
+
+    let isDrawingPoly = false;
+    let polyPoints = [];
+    let polyDraftLayer = null;
+
+    const SUBSCENARIOS_BY_SCENARIO = {
+        SCENARIO_AIB: [
+            { value: "ALL", label: "Tutti i sottoscenari AIB" },
+            { value: "AIB_VIABILITA", label: "Viabilita e accessi" },
+            { value: "AIB_PUNTI_ACQUA", label: "Punti acqua e piazzole" },
+            { value: "AIB_RISCHI", label: "Linee elettriche, pendenze e punti sensibili" },
+            { value: "AIB_EVOLUZIONE", label: "Evoluzione incendio e vento" },
+            { value: "AIB_MEZZI", label: "Mezzi aerei, squadre e posti di comando" },
+            { value: "AIB_AZIONI", label: "Azioni e manovre tattiche" }
+        ],
+        SCENARIO_IDRO: [
+            { value: "ALL", label: "Tutti i sottoscenari Idrogeologico" },
+            { value: "IDRO_AREE_POLIGONO", label: "Aree a rischio e poligoni perimetrati" },
+            { value: "IDRO_RETI_IDRAULICA", label: "Dissesti, esondazioni, alvei e idrometri" },
+            { value: "IDRO_COMANDO_FORZE", label: "COC, squadre, varchi e punti sensibili" }
+        ],
+        SCENARIO_RICERCA: [
+            { value: "ALL", label: "Tutti i sottoscenari Ricerca e Soccorso" },
+            { value: "RIC_SETTORI_TRACCE", label: "IPP, settori a poligono e tracce" },
+            { value: "RIC_SQUADRE_ELISUPPORTO", label: "Squadre, cinofile/SAF e basi operative" },
+            { value: "RIC_COORDINAMENTO_SANITA", label: "COC/CC, sanita e persone individuate" }
+        ],
+        SCENARIO_LOGISTICA: [
+            { value: "ALL", label: "Tutti i sottoscenari Logistica e Assistenza" },
+            { value: "LOG_ACCOGLIENZA_VIVERI", label: "Accoglienza, tende, mensa e viveri/H2O" },
+            { value: "LOG_MEZZI_SANITA", label: "Aree sosta mezzi e punto sanitario" },
+            { value: "LOG_COORDINAMENTO_CONTROLLO", label: "COC/CC, squadre e varchi" }
+        ]
+    };
+
+    const WMS_BASE_URL = "https://www.geoportale.regione.lombardia.it/arcgis/services/Cartografia_di_Base/CTR/MapServer/WMSServer";
+    const OVERLAY_CONFIGS = [
+        { id: "ctr", label: "CTR / Base Cartografica (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Cartografia_di_Base/CTR/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.75 },
+        { id: "pai", label: "PAI / Rischio Idrogeologico (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Difesa_del_Suolo/PAI/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
+        { id: "pgra", label: "PGRA / Alluvioni (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Difesa_del_Suolo/PGRA/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
+        { id: "aib", label: "AIB / Boschi e Foreste (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Foreste/Boschi/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
+        { id: "sentieri", label: "Sentieri / Rete Escursionistica (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Turismo/Sentieri/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.85 },
+        { id: "ped", label: "PED / Dighe (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Protezione_Civile/PED/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
+        { id: "pra", label: "PRA / Valanghe (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Protezione_Civile/PRA/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 }
+    ];
+
+    const SIMBOLI = [
+        { id: 1, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#6d4c41", nome: "Sentiero o mulattiera", tag: "SENT", borderStyle: "dashed", size: [44, 20] },
+        { id: 2, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#374151", nome: "Strada per mezzi leggeri", tag: "STR L", size: [46, 20] },
+        { id: 3, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#6d4c41", nome: "Strada sterrata per mezzi leggeri", tag: "4x4 L", borderStyle: "dotted", size: [46, 20] },
+        { id: 4, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#111827", nome: "Strada per mezzi pesanti", tag: "STR P", borderWidth: "3px", size: [48, 22] },
+        { id: 5, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#6d4c41", nome: "Strada sterrata per mezzi pesanti", tag: "4x4 P", borderStyle: "dashed", borderWidth: "3px", size: [48, 22] },
+        { id: 6, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#1d4ed8", nome: "Senso di marcia obbligatorio", tag: "->", size: [34, 20] },
+        { id: 7, scenario: "SCENARIO_AIB", sub: "AIB_VIABILITA", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
+
+        { id: 8, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#d97706", nome: "Pendenza lieve", tag: "PEND 1", size: [50, 20] },
+        { id: 9, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#ea580c", nome: "Pendenza moderata", tag: "PEND 2", size: [50, 20] },
+        { id: 10, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#c0392b", nome: "Pendenza forte", tag: "PEND 3", size: [50, 20] },
+        { id: 11, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#ca8a04", nome: "Linea elettrica", tag: "EL ON", customBg: "#fef08a", customText: "#854d0e", size: [46, 20] },
+        { id: 12, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#6b7280", nome: "Linea elettrica disattivata", tag: "EL OFF", size: [52, 20] },
+        { id: 15, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#e67e22", nome: "Punto sensibile", svgType: "SENSITIVE", size: [26, 26] },
+        { id: 16, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#16a34a", nome: "Punto sensibile per interfaccia", svgType: "WUI", size: [28, 28] },
+        { id: 18, scenario: "SCENARIO_AIB", sub: "AIB_RISCHI", col: "#7e22ce", nome: "Altri ostacoli alla navigazione aerea", tag: "OST AEREI", size: [62, 20] },
+
+        { id: 13, scenario: "SCENARIO_AIB", sub: "AIB_PUNTI_ACQUA", col: "#0284c7", nome: "Punto d'acqua", svgType: "WATER", size: [24, 24] },
+        { id: 14, scenario: "SCENARIO_AIB", sub: "AIB_PUNTI_ACQUA", col: "#0284c7", nome: "Punto d'acqua per elicotteri", svgType: "WATER_HELI", size: [28, 28] },
+        { id: 17, scenario: "SCENARIO_AIB", sub: "AIB_PUNTI_ACQUA", col: "#111827", nome: "Piazzola per elicottero", svgType: "HELIPAD", size: [26, 26] },
+
+        { id: 19, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#c0392b", nome: "Asse di sviluppo principale", svgType: "ARROW_MAIN", size: [54, 26] },
+        { id: 20, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#c0392b", nome: "Asse di sviluppo secondario veloce", svgType: "ARROW_FAST", size: [48, 24] },
+        { id: 21, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#c0392b", nome: "Asse di sviluppo secondario lento", svgType: "ARROW_SLOW", size: [48, 24] },
+        { id: 22, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#e74c3c", nome: "Punto di origine", svgType: "ORIGIN", size: [28, 28] },
+        { id: 23, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#c0392b", nome: "Fronte dell'incendio", svgType: "FIRE_FRONT", size: [54, 24] },
+        { id: 24, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#1e3a8a", nome: "Direzione del vento intensita debole", tag: "<- / km/h", size: [58, 20] },
+        { id: 25, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#1e3a8a", nome: "Direzione del vento intensita moderata", tag: "<- // km/h", size: [62, 20] },
+        { id: 26, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#1e3a8a", nome: "Direzione del vento intensita forte", tag: "<- /// km/h", size: [66, 20] },
+        { id: 27, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#c0392b", nome: "Incendio di chioma", tag: "CHIOMA", size: [54, 20] },
+        { id: 28, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#ea580c", nome: "Incendio radente", tag: "RADENTE", size: [56, 20] },
+        { id: 29, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#7c2d12", nome: "Incendio sotterraneo", tag: "SOTTERR", size: [56, 20] },
+
+        { id: 30, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "CAN", nome: "Canadair", tipoBox: "AEREO", size: [50, 26] },
+        { id: 31, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "S 64", nome: "S 64", tipoBox: "AEREO", size: [50, 26] },
+        { id: 32, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "Boss", nome: "Fireboss", tipoBox: "AEREO", size: [50, 26] },
+        { id: 33, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "Eli", nome: "Elicotteri medi e leggeri", tipoBox: "AEREO", size: [50, 26] },
+        { id: 34, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "Eli Com", nome: "Elicottero Comando", tipoBox: "AEREO", size: [58, 26] },
+        { id: 35, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "AEREO", nome: "Altro mezzo aereo", tipoBox: "AEREO", size: [52, 26] },
+        { id: 36, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "VVF", nome: "Squadra Vigili del Fuoco", tipoBox: "TERRA", size: [46, 24] },
+        { id: 37, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "VOL", nome: "Squadra Volontari", tipoBox: "TERRA", size: [46, 24] },
+        { id: 38, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "GOS", nome: "Squadra GOS", tipoBox: "TERRA", size: [46, 24] },
+        { id: 39, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "SAI", nome: "Squadra SAI", tipoBox: "TERRA", size: [46, 24] },
+        { id: 40, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "SQ", nome: "Altra squadra", tipoBox: "TERRA", size: [46, 24] },
+        { id: 41, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "GRP", nome: "Gruppo", tipoBox: "TERRA", size: [48, 26] },
+        { id: 42, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "COL", nome: "Colonna", tipoBox: "TERRA", size: [48, 26] },
+        { id: 43, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "CP", nome: "Posto di comando", tipoBox: "TERRA", size: [46, 24] },
+        { id: 44, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "TP", nome: "Transit point", tipoBox: "TERRA", size: [46, 24] },
+        { id: 45, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#16a34a", sigla: "SS", nome: "Soccorso sanitario", tipoBox: "SANITARIO", size: [46, 24] },
+
+        { id: 46, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#d97706", sigla: "RIT CAN", nome: "Lancio mezzi aerei pesanti con ritardante", tipoBox: "AZIONE", size: [60, 22] },
+        { id: 47, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#0284c7", sigla: "H2O CAN", nome: "Lancio mezzi aerei pesanti con acqua", tipoBox: "AZIONE", size: [60, 22] },
+        { id: 48, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#d97706", sigla: "RIT ELI", nome: "Lancio elicotteri medi e leggeri con ritardante", tipoBox: "AZIONE", size: [60, 22] },
+        { id: 49, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#0284c7", sigla: "H2O ELI", nome: "Lancio elicotteri medi e leggeri con acqua", tipoBox: "AZIONE", size: [60, 22] },
+        { id: 50, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#2563eb", sigla: "RIC", nome: "Ricognizione", tipoBox: "AZIONE", size: [44, 22] },
+        { id: 51, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#16a34a", sigla: "EV", nome: "Evacuazione", tipoBox: "AZIONE", size: [44, 22] },
+        { id: 52, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "DIF LIN", nome: "Difesa in linea", tipoBox: "AZIONE", size: [58, 22] },
+        { id: 53, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "DIF PER", nome: "Difesa perimetrale", tipoBox: "AZIONE", size: [58, 22] },
+        { id: 54, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "ATT FIAN", nome: "Attacco sui fianchi", tipoBox: "AZIONE", size: [62, 22] },
+        { id: 55, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "ATT LOC", nome: "Attacco localizzato", tipoBox: "AZIONE", size: [60, 22] },
+        { id: 56, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#0284c7", sigla: "BON", nome: "Bonifica", tipoBox: "AZIONE", size: [48, 22] },
+        { id: 57, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#d97706", sigla: "LIN SIC", nome: "Creazione linea di sicurezza", tipoBox: "AZIONE", size: [58, 22] },
+        { id: 58, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#ea580c", sigla: "ACC PT", nome: "Accensione per punti", tipoBox: "AZIONE", size: [58, 22] },
+        { id: 59, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#ea580c", sigla: "ACC LN", nome: "Accensione per linee", tipoBox: "AZIONE", size: [58, 22] },
+
+        // Scenario Idrogeologico
+        { id: 60, scenario: "SCENARIO_IDRO", sub: "IDRO_AREE_POLIGONO", col: "#c0392b", nome: "Poligono area frana / dissesto (perimetro area)", tag: "POLIGONO", borderStyle: "dashed", borderWidth: "3px", isPolygonTool: true, size: [62, 20] },
+        { id: 65, scenario: "SCENARIO_IDRO", sub: "IDRO_AREE_POLIGONO", col: "#c0392b", nome: "Area evacuata / a rischio", tag: "EVAC", solidBg: true, size: [44, 20] },
+
+        { id: 61, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#0284c7", nome: "Esondazione / allagamento", tag: "ESOND", borderStyle: "dashed", size: [52, 20] },
+        { id: 62, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#ea580c", nome: "Dissesto stradale", tag: "DISS STR", size: [56, 20] },
+        { id: 63, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#b45309", nome: "Occlusione alveo / ponti", tag: "OCCL ALV", size: [58, 20] },
+        { id: 64, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#0369a1", nome: "Idrometro / soglia critica", tag: "IDROM", size: [52, 20] },
+        { id: 66, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#1d4ed8", nome: "Punto di monitoraggio", tag: "MONIT", size: [50, 20] },
+
+        { id: 67, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [44, 24] },
+        { id: 68, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [42, 24] },
+        { id: 69, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 24] },
+        { id: 70, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#c0392b", nome: "Cancelli / varchi chiusi", tag: "X VARCO", solidBg: true, size: [54, 20] },
+        { id: 71, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 24] },
+        { id: 72, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1d4ed8", sigla: "POLZI", nome: "Polizia / Polizia Locale (POLZI)", tipoBox: "TERRA", size: [48, 24] },
+        { id: 73, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#0f766e", sigla: "RACCOLTA", nome: "Punto di raccolta squadre", tipoBox: "TERRA", size: [62, 24] },
+        { id: 74, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#e67e22", nome: "Punto sensibile", svgType: "SENSITIVE", size: [26, 26] },
+        { id: 75, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
+
+        // Scenario Ricerca e Soccorso
+        { id: 76, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#dc2626", nome: "IPP / Ultimo avvistamento", tag: "IPP", size: [40, 20] },
+        { id: 77, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#2563eb", nome: "Poligono settore di ricerca (perimetro area)", tag: "POLIGONO", borderStyle: "dashed", isPolygonTool: true, size: [62, 20] },
+        { id: 78, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#0891b2", nome: "Traccia / percorso battuto", tag: "TRACCIA", borderStyle: "dotted", size: [54, 20] },
+
+        { id: 79, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#0f766e", sigla: "RACCOLTA", nome: "Punto di raccolta squadre", tipoBox: "TERRA", size: [62, 24] },
+        { id: 80, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#111827", nome: "Base operativa / piazzola H", svgType: "HELIPAD", size: [26, 26] },
+        { id: 81, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#b45309", sigla: "CIN/SAF", nome: "Squadra cinofila / SAF / speleo", tipoBox: "TERRA", size: [56, 24] },
+        { id: 82, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 24] },
+
+        { id: 83, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#16a34a", nome: "Persona individuata / evacuata", tag: "INDIV", solidBg: true, size: [48, 20] },
+        { id: 84, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [44, 24] },
+        { id: 85, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [42, 24] },
+        { id: 86, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 24] },
+        { id: 87, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#16a34a", sigla: "SS", nome: "Punto sanitario / soccorso sanitario", tipoBox: "SANITARIO", size: [46, 24] },
+        { id: 88, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
+
+        // Scenario Logistica e Assistenza Popolazione
+        { id: 89, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0284c7", sigla: "ACCOGL", nome: "Punto di accoglienza / centro assistenza", tipoBox: "TERRA", size: [56, 24] },
+        { id: 90, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0f766e", sigla: "TENDE", nome: "Area tende / ricovero temporaneo", tipoBox: "TERRA", size: [52, 24] },
+        { id: 91, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#d97706", sigla: "MENSA", nome: "Mensa", tipoBox: "TERRA", size: [50, 24] },
+        { id: 92, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0284c7", sigla: "VIVERI/H2O", nome: "Distribuzione acqua / viveri / beni", tipoBox: "TERRA", size: [66, 24] },
+
+        { id: 93, scenario: "SCENARIO_LOGISTICA", sub: "LOG_MEZZI_SANITA", col: "#16a34a", sigla: "SS", nome: "Punto sanitario / soccorso sanitario", tipoBox: "SANITARIO", size: [46, 24] },
+        { id: 94, scenario: "SCENARIO_LOGISTICA", sub: "LOG_MEZZI_SANITA", col: "#4b5563", sigla: "SOSTA/CARB", nome: "Area sosta mezzi / rifornimento", tipoBox: "TERRA", size: [68, 24] },
+
+        { id: 95, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [44, 24] },
+        { id: 96, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [42, 24] },
+        { id: 97, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 24] },
+        { id: 98, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#c0392b", nome: "Cancelli / varchi chiusi", tag: "X VARCO", solidBg: true, size: [54, 20] },
+        { id: 99, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 24] },
+        { id: 100, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1d4ed8", sigla: "POLZI", nome: "Polizia / Polizia Locale (POLZI)", tipoBox: "TERRA", size: [48, 24] }
+    ];
+
+    function setDiag(msg, isError) {
+        const el = document.getElementById("diag-banner");
+        if (!el) return;
+        el.textContent = msg;
+        el.style.background = isError ? "#fee2e2" : "#dcfce7";
+        el.style.color = isError ? "#991b1b" : "#166534";
+        el.style.borderColor = isError ? "#f87171" : "#4ade80";
+    }
+
+    function escapeHtml(str) {
+        return String(str || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function safeReadStorage() {
+        try {
+            if (window.localStorage) {
+                const raw = window.localStorage.getItem(STORAGE_KEY);
+                if (raw) return JSON.parse(raw);
+            }
+        } catch (e) {}
+        try {
+            if (memoryStorage[STORAGE_KEY]) return JSON.parse(memoryStorage[STORAGE_KEY]);
+        } catch (e) {}
+        return [];
+    }
+
+    function safeWriteStorage(eventsArr) {
+        const serialized = JSON.stringify(eventsArr || []);
+        memoryStorage[STORAGE_KEY] = serialized;
+        try {
+            if (window.localStorage) {
+                window.localStorage.setItem(STORAGE_KEY, serialized);
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    function getCurrentUserPayload() {
+        return {
+            name: (currentOperator || document.getElementById("op-name-input").value.trim() || "Consultazione").trim(),
+            email: (currentOperatorEmail || document.getElementById("op-email-input").value.trim() || "").trim(),
+            role: (currentOperatorRole || document.getElementById("op-role-input").value.trim() || "Operatore").trim()
+        };
+    }
+
+    function parseCloudSummary(summaryStr) {
+        if (!summaryStr) return { text: "", snapshot: null };
+        const str = String(summaryStr);
+        const marker = "||SITAC_JSON||";
+        const idx = str.indexOf(marker);
+        if (idx === -1) return { text: str, snapshot: null };
+        const textPart = str.slice(0, idx).trim();
+        const jsonPart = str.slice(idx + marker.length).trim();
+        try {
+            return { text: textPart, snapshot: JSON.parse(jsonPart) };
+        } catch (e) {
+            return { text: textPart, snapshot: null };
+        }
+    }
+
+    function buildCloudSummary(textNote, snapshotObj) {
+        const cleanNote = String(textNote || "").trim();
+        return cleanNote + "\n||SITAC_JSON||" + JSON.stringify(snapshotObj);
+    }
+
+    function cloudRowToMapEvent(row) {
+        const parsed = parseCloudSummary(row.summary);
+        const snap = parsed.snapshot || {};
+        return {
+            id: row.event_id,
+            title: row.title || snap.title || row.event_id,
+            editPassword: snap.editPassword || "",
+            savedAt: row.created_at || snap.savedAt || "",
+            operator: row.author_name || snap.operator || "Operatore",
+            authorEmail: row.author_email || "",
+            role: row.role || "",
+            status: row.status || "Aperto",
+            summaryText: parsed.text || "",
+            rawSummary: row.summary || "",
+            scenario: snap.scenario || "SCENARIO_AIB",
+            subscenario: snap.subscenario || "ALL",
+            stato: snap.stato || "PLANNED",
+            mapCenter: snap.mapCenter || { lat: 46.16, lng: 10.33, zoom: 13 },
+            markers: Array.isArray(snap.markers) ? snap.markers : [],
+            polygons: Array.isArray(snap.polygons) ? snap.polygons : [],
+            logs: Array.isArray(snap.logs) ? snap.logs : []
+        };
+    }
+
+    async function postToCloud(payload) {
+        const statusEl = document.getElementById("cloud-sync-status");
+        if (statusEl) statusEl.textContent = "Salvataggio online in corso...";
+        await fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, user: getCurrentUserPayload() })
+        });
+        setTimeout(function() {
+            syncFromCloud(currentEventId, false);
+        }, 1100);
+    }
+
+    async function syncFromCloud(preferredEventId, autoLoadFirst) {
+        const statusEl = document.getElementById("cloud-sync-status");
+        if (statusEl) statusEl.textContent = "Sincronizzazione archivio online...";
+        try {
+            const res = await fetch(SCRIPT_URL + "?t=" + Date.now());
+            const data = await res.json();
+            cloudState = {
+                events: Array.isArray(data.events) ? data.events : [],
+                entries: Array.isArray(data.entries) ? data.entries : [],
+                history: Array.isArray(data.history) ? data.history : []
+            };
+            const mappedEvents = cloudState.events
+                .filter(function(ev) { return String(ev.status || "") !== "Eliminato"; })
+                .map(cloudRowToMapEvent)
+                .reverse();
+
+            safeWriteStorage(mappedEvents);
+            const targetId = preferredEventId || currentEventId;
+            refreshEventDropdown(targetId);
+
+            if (statusEl) {
+                statusEl.innerHTML = "Online: <b>" + mappedEvents.length + "</b> eventi sincronizzati (" + new Date().toLocaleTimeString("it-IT") + ")";
+            }
+
+            if (targetId) {
+                const found = mappedEvents.find(function(e) { return e.id === targetId; });
+                if (found) {
+                    loadEventIntoMap(found);
+                    return;
+                }
+            }
+            if (autoLoadFirst && mappedEvents.length > 0 && !(new URLSearchParams(window.location.search || "").get("gps"))) {
+                loadEventIntoMap(mappedEvents[0]);
+            }
+        } catch (err) {
+            if (statusEl) {
+                statusEl.innerHTML = "<span style='color:#b91c1c;'>Offline / cache locale (" + escapeHtml(err.message) + ")</span>";
+            }
+            const localCached = safeReadStorage();
+            refreshEventDropdown(currentEventId);
+            if (autoLoadFirst && localCached.length > 0 && !currentEventId) {
+                loadEventIntoMap(localCached[0]);
+            }
+        }
+    }
+
+    function renderCloudCollaboration(eventId) {
+        const box = document.getElementById("cloud-collab-box");
+        const entriesBox = document.getElementById("cloud-entries-list");
+        const historyBox = document.getElementById("cloud-history-list");
+        if (!box || !entriesBox || !historyBox) return;
+
+        if (!eventId) {
+            box.style.display = "none";
+            return;
+        }
+        box.style.display = "block";
+
+        const evRow = (cloudState.events || []).find(function(e) { return e.event_id === eventId; });
+        const evEntries = (cloudState.entries || []).filter(function(en) { return en.event_id === eventId; });
+        const evHistory = (cloudState.history || []).filter(function(h) { return h.event_id === eventId; });
+
+        if (evEntries.length === 0) {
+            entriesBox.innerHTML = "<div class='event-meta'>Nessun intervento registrato.</div>";
+        } else {
+            entriesBox.innerHTML = evEntries.map(function(en) {
+                const editBtn = isEditable
+                    ? ' <button type="button" class="small-btn" style="padding:1px 5px;font-size:10px;background:#475569;color:#fff;" onclick="window._sitacEditCloudEntry('' + escapeHtml(en.entry_id) + '')">Modifica</button>'
+                    : '';
+                return '<div class="cloud-entry-card">' +
+                    '<b>' + escapeHtml(en.author_name || en.author_email || "Operatore") + '</b> (' + escapeHtml(en.role || "") + '): ' +
+                    escapeHtml(en.note || "") + editBtn +
+                '</div>';
+            }).join("");
+        }
+
+        if (evHistory.length === 0) {
+            historyBox.innerHTML = "<div class='event-meta'>Nessuna modifica registrata.</div>";
+        } else {
+            historyBox.innerHTML = evHistory.map(function(h) {
+                const origEntry = evEntries.find(function(e) { return e.entry_id === h.target_id; });
+                const origAuthorEmail = h.target_type === "evento"
+                    ? (evRow ? evRow.author_email : "")
+                    : (origEntry ? origEntry.author_email : "");
+                const isForeign = origAuthorEmail && h.editor_email && (origAuthorEmail.toLowerCase() !== h.editor_email.toLowerCase());
+                const oldShort = parseCloudSummary(h.old_value).text || "(aggiornamento mappa/dati)";
+                const newShort = parseCloudSummary(h.new_value).text || "(aggiornamento mappa/dati)";
+                return '<div class="' + (isForeign ? 'cloud-mod-alert' : 'cloud-entry-card') + '">' +
+                    (isForeign ? '<b>[MODIFICA SU CONTENUTO ALTRUI]</b> ' : '') +
+                    '<b>' + escapeHtml(h.editor_name || h.editor_email || "Operatore") + '</b> su <i>' + escapeHtml(h.target_type || "") + '.' + escapeHtml(h.field || "") + '</i>: ' +
+                    '"' + escapeHtml(oldShort) + '" &rarr; "<b>' + escapeHtml(newShort) + '</b>"' +
+                '</div>';
+            }).join("");
+        }
+    }
+
+    window._sitacEditCloudEntry = function(entryId) {
+        if (!isEditable) return alert("Sbloccare con password per modificare.");
+        const en = (cloudState.entries || []).find(function(item) { return item.entry_id === entryId; });
+        if (!en) return;
+        const nextNote = prompt("Modifica testo intervento:", en.note || "");
+        if (nextNote === null || nextNote.trim() === "" || nextNote.trim() === (en.note || "")) return;
+        const me = getCurrentUserPayload();
+        if (en.author_email && me.email && en.author_email.toLowerCase() !== me.email.toLowerCase()) {
+            if (!confirm("Sta modificando un intervento scritto da " + (en.author_name || en.author_email) + ". La modifica restera visibile nello storico. Continuare?")) {
+                return;
+            }
+        }
+        postToCloud({
+            action: "edit_field",
+            event_id: currentEventId,
+            target_type: "intervento",
+            target_id: entryId,
+            field: "note",
+            new_value: nextNote.trim()
+        });
+        registraLog("Modificato intervento di " + (en.author_name || en.author_email));
+    };
+
+    function handleAddCloudEntry() {
+        if (!operatorModeActive && !sbloccaModifica()) return;
+        if (currentEventId && currentEventPassword && !unlockedEventIds[currentEventId]) {
+            if (!promptUnlockCurrentEvent()) return;
+        }
+        if (!currentEventId || String(currentEventId).indexOf("EVT-") !== 0) {
+            return alert("Salvi prima l'evento online (Salva Online) per poter aggiungere interventi.");
+        }
+        const inp = document.getElementById("cloud-entry-input");
+        const txt = inp ? inp.value.trim() : "";
+        if (!txt) return alert("Inserire il testo dell'intervento.");
+        postToCloud({
+            action: "add_entry",
+            event_id: currentEventId,
+            note: txt,
+            role: getCurrentUserPayload().role
+        });
+        inp.value = "";
+        registraLog("Inviato intervento online: " + txt);
+    }
+
+    function serializeCurrentState(titleOverride) {
+        const center = map ? map.getCenter() : { lat: currentLat, lng: currentLng };
+        const zoom = map ? map.getZoom() : 13;
+        const titleInput = document.getElementById("event-title-input");
+        const typedTitle = (titleOverride || (titleInput ? titleInput.value.trim() : "")).trim();
+        const existing = safeReadStorage().find(function(ev) { return ev.id === currentEventId; });
+        const finalTitle = typedTitle || (existing ? existing.title : ("Evento " + new Date().toLocaleDateString("it-IT")));
+
+        const markersData = Object.keys(markersRegistry).map(function(k) {
+            const e = markersRegistry[k];
+            const ll = e.marker ? e.marker.getLatLng() : center;
+            return {
+                uid: e.uid,
+                symId: e.sym.id,
+                stato: e.stato,
+                nota: e.nota,
+                autore: e.autore,
+                ora: e.ora,
+                scale: e.scale,
+                stretchX: e.stretchX,
+                stretchY: e.stretchY,
+                rot: e.rot,
+                baseZoom: e.baseZoom,
+                lat: ll.lat,
+                lng: ll.lng
+            };
+        });
+
+        const polygonsData = Object.keys(polygonsRegistry).map(function(k) {
+            const p = polygonsRegistry[k];
+            const rawLatLngs = p.layer && p.layer.getLatLngs ? p.layer.getLatLngs()[0] : p.points;
+            const pts = (rawLatLngs || []).map(function(pt) {
+                return Array.isArray(pt) ? pt : [pt.lat, pt.lng];
+            });
+            return {
+                uid: p.uid,
+                num: p.num,
+                points: pts,
+                color: p.color,
+                nota: p.nota,
+                scenarioLabel: p.scenarioLabel,
+                autore: p.autore,
+                ora: p.ora
+            };
+        });
+
+        const pwdInputEl = document.getElementById("event-pwd-input");
+        const typedPwd = pwdInputEl ? pwdInputEl.value : "";
+        const finalPwd = typedPwd || currentEventPassword || (existing ? (existing.editPassword || "") : "");
+        return {
+            id: currentEventId || "",
+            title: finalTitle,
+            editPassword: finalPwd,
+            savedAt: new Date().toLocaleString("it-IT"),
+            operator: currentOperator || (existing ? existing.operator : "Operatore"),
+            scenario: document.getElementById("scenario-select").value,
+            subscenario: document.getElementById("subscenario-select").value,
+            stato: document.getElementById("stato-sel").value,
+            mapCenter: { lat: center.lat, lng: center.lng, zoom: zoom },
+            markers: markersData,
+            polygons: polygonsData,
+            logs: logsRegistry.slice()
+        };
+    }
+
+    function loadEventIntoMap(ev) {
+        if (!ev) return;
+        clearMapElements();
+        currentEventId = ev.id;
+        currentEventPassword = ev.editPassword || "";
+        document.getElementById("event-title-input").value = ev.title || "";
+        document.getElementById("event-pwd-input").value = "";
+        const lockInfo = currentEventPassword
+            ? (unlockedEventIds[ev.id] ? " (sbloccato per modifica)" : " (protetto da password evento)")
+            : " (senza password evento)";
+        document.getElementById("event-active-info").innerHTML =
+            "Evento: <b>" + escapeHtml(ev.title) + "</b>" + escapeHtml(lockInfo) +
+            "<br>Aperto da: " + escapeHtml(ev.operator || "") +
+            (ev.authorEmail ? " (" + escapeHtml(ev.authorEmail) + ")" : "") +
+            (ev.role ? " &bull; " + escapeHtml(ev.role) : "");
+
+        if (ev.scenario && document.getElementById("scenario-select").querySelector('option[value="' + ev.scenario + '"]')) {
+            document.getElementById("scenario-select").value = ev.scenario;
+        }
+        populateSubscenarios();
+        if (ev.subscenario && document.getElementById("subscenario-select").querySelector('option[value="' + ev.subscenario + '"]')) {
+            document.getElementById("subscenario-select").value = ev.subscenario;
+        }
+        if (ev.stato && document.getElementById("stato-sel").querySelector('option[value="' + ev.stato + '"]')) {
+            document.getElementById("stato-sel").value = ev.stato;
+        }
+        renderSimboli();
+
+        if (map && ev.mapCenter) {
+            map.setView([ev.mapCenter.lat, ev.mapCenter.lng], ev.mapCenter.zoom || 13);
+        }
+
+        let maxM = 0;
+        (ev.markers || []).forEach(function(m) {
+            const n = parseInt(String(m.uid || "").replace(/\D+/g, ""), 10);
+            if (!isNaN(n) && n > maxM) maxM = n;
+            addMarkerFromData({
+                uid: m.uid,
+                symId: m.symId,
+                stato: m.stato,
+                nota: m.nota,
+                autore: m.autore,
+                ora: m.ora,
+                scale: m.scale,
+                stretchX: m.stretchX,
+                stretchY: m.stretchY,
+                rot: m.rot,
+                baseZoom: m.baseZoom,
+                latlng: [m.lat, m.lng],
+                openPopup: false
+            });
+        });
+        markerCounter = maxM;
+
+        let maxP = 0;
+        (ev.polygons || []).forEach(function(p) {
+            const pNum = parseInt(p.num, 10) || parseInt(String(p.uid || "").replace(/\D+/g, ""), 10) || 0;
+            if (pNum > maxP) maxP = pNum;
+            addPolygonToMap({
+                uid: p.uid,
+                num: pNum || (++polyCounter),
+                points: p.points || [],
+                color: p.color || "#c0392b",
+                nota: p.nota || "",
+                scenarioLabel: p.scenarioLabel || "Scenario",
+                autore: p.autore || "Operatore",
+                ora: p.ora || "",
+                openPopup: false
+            });
+        });
+        if (maxP > polyCounter) polyCounter = maxP;
+
+        const logBox = document.getElementById("log-container");
+        if (ev.logs && ev.logs.length > 0 && logBox) {
+            logBox.innerHTML = "";
+            ev.logs.forEach(function(line) {
+                logsRegistry.push(line);
+                logBox.innerHTML += line + "<br>";
+            });
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+        refreshEventDropdown(currentEventId);
+        applyEditStateToUi();
+    }
+
+    function refreshEventDropdown(selectedId) {
+        const sel = document.getElementById("event-select");
+        const events = safeReadStorage();
+        sel.innerHTML = '<option value="">-- Seleziona un evento online (' + events.length + ') --</option>';
+        events.forEach(function(ev) {
+            const opt = document.createElement("option");
+            opt.value = ev.id;
+            opt.textContent = ev.title + (ev.operator ? " - " + ev.operator : "");
+            if (selectedId && ev.id === selectedId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    function handleNewEvent() {
+        if (!operatorModeActive && !sbloccaModifica()) return;
+        const titleEl = document.getElementById("event-title-input");
+        const pwdEl = document.getElementById("event-pwd-input");
+        const title = titleEl.value.trim() || ("Evento " + new Date().toLocaleTimeString("it-IT"));
+        clearMapElements();
+        currentEventId = "";
+        currentEventPassword = pwdEl ? pwdEl.value : "";
+        titleEl.value = title;
+        applyEditStateToUi();
+        document.getElementById("event-active-info").innerHTML = "Nuovo evento in corso: <b>" + escapeHtml(title) + "</b> (scelga la password evento e premi Salva Online)";
+        renderCloudCollaboration("");
+        registraLog("Preparato nuovo evento: " + title);
+    }
+
+    function handleSaveEvent() {
+        if (!operatorModeActive && !sbloccaModifica()) return;
+        const pwdEl = document.getElementById("event-pwd-input");
+        if (!currentEventId && pwdEl && !pwdEl.value.trim()) {
+            const chosen = prompt("Scelga una password per proteggere le modifiche di questo nuovo evento (o lasci vuoto per evento aperto):");
+            if (chosen === null) return;
+            pwdEl.value = chosen;
+        }
+        if (currentEventId && currentEventPassword && !unlockedEventIds[currentEventId]) {
+            if (!promptUnlockCurrentEvent()) return;
+        }
+        const snap = serializeCurrentState();
+        currentEventPassword = snap.editPassword || "";
+        const isTest = document.getElementById("event-is-test").checked;
+        const summaryNote = "Simboli: " + snap.markers.length + ", Poligoni: " + snap.polygons.length + " (" + snap.savedAt + ")";
+        const packedSummary = buildCloudSummary(summaryNote, snap);
+        const me = getCurrentUserPayload();
+
+        const existingCloud = (cloudState.events || []).find(function(e) { return e.event_id === currentEventId; });
+        if (existingCloud) {
+            if (existingCloud.author_email && me.email && existingCloud.author_email.toLowerCase() !== me.email.toLowerCase()) {
+                if (!confirm("Questo evento e stato aperto da " + (existingCloud.author_name || existingCloud.author_email) + ". Le tue modifiche alla mappa verranno registrate nella cronologia. Continuare?")) {
+                    return;
+                }
+            }
+            postToCloud({
+                action: "edit_field",
+                event_id: currentEventId,
+                target_type: "evento",
+                target_id: currentEventId,
+                field: "summary",
+                new_value: packedSummary
+            });
+            registraLog("Aggiornato evento online "" + snap.title + """);
+        } else {
+            postToCloud({
+                action: "create_event",
+                title: snap.title,
+                summary: packedSummary,
+                is_test: isTest,
+                role: me.role,
+                status: "Aperto"
+            });
+            registraLog("Creato nuovo evento online "" + snap.title + """);
+        }
+    }
+
+    function handleDeleteEvent() {
+        if (!operatorModeActive && !sbloccaModifica()) return;
+        if (currentEventId && currentEventPassword && !unlockedEventIds[currentEventId]) {
+            if (!promptUnlockCurrentEvent()) return;
+        }
+        const targetId = currentEventId || document.getElementById("event-select").value;
+        if (!targetId) return alert("Selezionare un evento da chiudere/rimuovere.");
+        if (!confirm("Contrassegnare questo evento come Eliminato nell'archivio online?")) return;
+        postToCloud({
+            action: "edit_field",
+            event_id: targetId,
+            target_type: "evento",
+            target_id: targetId,
+            field: "status",
+            new_value: "Eliminato"
+        });
+        if (currentEventId === targetId) {
+            currentEventId = "";
+            document.getElementById("event-title-input").value = "";
+            document.getElementById("event-active-info").textContent = "Evento rimosso dall'elenco attivo.";
+            renderCloudCollaboration("");
+        }
+        registraLog("Contrassegnato evento come Eliminato online.");
+    }
+
+    function handleExportJson() {
+        const snap = serializeCurrentState();
+        const blob = new Blob([JSON.stringify(snap, null, 2)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const safeName = (snap.title || "evento_sitac").toLowerCase().replace(/[^a-z0-9_-]+/g, "_");
+        a.href = url;
+        a.download = safeName + ".json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        registraLog("Esportato evento in JSON: " + a.download);
+    }
+
+    function handleImportJsonFile(e) {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const parsed = JSON.parse(evt.target.result);
+                if (!parsed || !Array.isArray(parsed.markers)) {
+                    return alert("File JSON non valido per SITAC.");
+                }
+                parsed.id = "";
+                loadEventIntoMap(parsed);
+                registraLog("Importato evento da file: " + (parsed.title || file.name) + " (premi Salva Online per condividerlo)");
+            } catch (err) {
+                alert("Errore lettura JSON: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+    }
+
+    function aggiornaGpsMarker(lat, lng, acc) {
+        currentLat = Number(lat).toFixed(6);
+        currentLng = Number(lng).toFixed(6);
+        hasGpsFix = true;
+
+        const accTxt = acc ? " (+/- " + Math.round(acc) + " m)" : "";
+        document.getElementById("gps-status").innerHTML =
+            "Posizione GPS: <b>" + currentLat + ", " + currentLng + "</b>" + accTxt;
+
+        if (map) {
+            if (!gpsMarker) {
+                gpsMarker = L.circleMarker([parseFloat(currentLat), parseFloat(currentLng)], {
+                    radius: 8,
+                    color: "#ffffff",
+                    weight: 2,
+                    fillColor: "#16a34a",
+                    fillOpacity: 0.95
+                }).addTo(map).bindTooltip("La mia posizione GPS", { direction: "top" });
+            } else {
+                gpsMarker.setLatLng([parseFloat(currentLat), parseFloat(currentLng)]);
+            }
+        }
+    }
+
+    function richiediGps() {
+        document.getElementById("gps-status").textContent = "Rilevamento GPS in corso...";
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    aggiornaGpsMarker(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                    if (map) map.setView([pos.coords.latitude, pos.coords.longitude], 15);
+                    registraLog("GPS aggiornato: " + currentLat + ", " + currentLng);
+                },
+                function() {
+                    if (map) {
+                        const c = map.getCenter();
+                        aggiornaGpsMarker(c.lat, c.lng, null);
+                        document.getElementById("gps-status").innerHTML += " <i>(da centro mappa)</i>";
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        } else if (map) {
+            const c = map.getCenter();
+            aggiornaGpsMarker(c.lat, c.lng, null);
+        }
+    }
+
+    function condividiPosizioneGps() {
+        if (!hasGpsFix && map) {
+            const c = map.getCenter();
+            aggiornaGpsMarker(c.lat, c.lng, null);
+        }
+        const who = (currentOperator || document.getElementById("op-name-input").value.trim() || "Operatore").trim();
+        const baseHref = (window.location.href && window.location.href.indexOf("http") === 0)
+            ? window.location.href.split("?")[0].split("#")[0]
+            : "https://example.org/sitac.html";
+        const shareUrl = baseHref + "?gps=" + currentLat + "," + currentLng + "&who=" + encodeURIComponent(who);
+        const mapsUrl = "https://www.google.com/maps?q=" + currentLat + "," + currentLng;
+
+        const box = document.getElementById("gps-link-box");
+        box.style.display = "block";
+        box.innerHTML =
+            "<b>Link posizione (" + escapeHtml(who) + "):</b><br>" +
+            escapeHtml(shareUrl) +
+            '<br><a href="' + mapsUrl + '" target="_blank" rel="noopener">Apri su Google Maps</a>';
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).catch(function() {});
+        }
+        registraLog("Condivisa posizione GPS (" + currentLat + ", " + currentLng + ") di " + who);
+    }
+
+    function applicaPosizioneCondivisaDaUrl() {
+        try {
+            const params = new URLSearchParams(window.location.search || "");
+            const gpsParam = params.get("gps");
+            if (!gpsParam) return;
+            const parts = gpsParam.split(",");
+            if (parts.length !== 2) return;
+            const lat = parseFloat(parts[0]);
+            const lng = parseFloat(parts[1]);
+            if (isNaN(lat) || isNaN(lng)) return;
+            const who = params.get("who") || "Operatore condiviso";
+            currentLat = lat.toFixed(6);
+            currentLng = lng.toFixed(6);
+
+            if (map) {
+                map.setView([lat, lng], 15);
+                sharedGpsMarker = L.circleMarker([lat, lng], {
+                    radius: 9,
+                    color: "#ffffff",
+                    weight: 2,
+                    fillColor: "#dc2626",
+                    fillOpacity: 0.95
+                }).addTo(map).bindPopup("<b>Posizione condivisa:</b> " + escapeHtml(who) + "<br>" + lat.toFixed(6) + ", " + lng.toFixed(6)).openPopup();
+            }
+            document.getElementById("gps-status").innerHTML = "Ricevuta GPS <b>" + escapeHtml(who) + "</b>: <b>" + currentLat + ", " + currentLng + "</b>";
+            registraLog("Caricata posizione condivisa da " + who + " (" + currentLat + ", " + currentLng + ")");
+        } catch (e) {}
+    }
+
+    function aggiornaMeteoVento() {
+        if (map) {
+            const c = map.getCenter();
+            currentLat = c.lat.toFixed(5);
+            currentLng = c.lng.toFixed(5);
+        }
+        const url = "https://api.open-meteo.com/v1/forecast?latitude=" + currentLat + "&longitude=" + currentLng + "&current=wind_speed_10m,wind_direction_10m,wind_gusts_10m";
+        document.getElementById("meteo-info").textContent = "Lettura vento in corso...";
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                const s = d.current.wind_speed_10m;
+                const g = d.current.wind_gusts_10m;
+                const dir = d.current.wind_direction_10m;
+                document.getElementById("meteo-info").innerHTML = "Vento: <b>" + s + " km/h</b> (Raffiche " + g + ") | Dir: <b>" + dir + "&deg;</b>";
+                registraLog("Meteo (" + currentLat + ", " + currentLng + "): " + s + " km/h, dir " + dir + " deg");
+            })
+            .catch(function() {
+                document.getElementById("meteo-info").textContent = "Errore lettura meteo.";
+            });
+    }
+
+    function canEditCurrentEvent() {
+        if (!operatorModeActive) return false;
+        if (!currentEventId) return true;
+        if (!currentEventPassword) return true;
+        return Boolean(unlockedEventIds[currentEventId]);
+    }
+
+    function applyEditStateToUi() {
+        isEditable = canEditCurrentEvent();
+        const lockBtn = document.getElementById("btn-unlock-event");
+        const badge = document.getElementById("event-lock-badge");
+        const statusEl = document.getElementById("status-lock");
+
+        if (!operatorModeActive) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Sola Lettura Libera</b>";
+            if (lockBtn) lockBtn.style.display = "none";
+        } else if (!currentEventId) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Nuovo Evento (Scelga Password Evento)</b>";
+            if (badge) badge.textContent = "Creazione nuovo evento libera con password scelta da Lei.";
+            if (lockBtn) lockBtn.style.display = "none";
+        } else if (!currentEventPassword || unlockedEventIds[currentEventId]) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Modifica Evento Sbloccata</b>";
+            if (badge) badge.textContent = currentEventPassword ? "Evento sbloccato con password dedicata." : "Evento aperto (senza password dedicata).";
+            if (lockBtn) lockBtn.style.display = "none";
+        } else {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Evento Protetto (Sola Lettura)</b>";
+            if (badge) badge.textContent = "Questo evento ha una password propria: inseriscila per modificarlo.";
+            if (lockBtn) lockBtn.style.display = "block";
+        }
+
+        document.querySelectorAll(".edit-only-box").forEach(function(el) {
+            if (isEditable) el.classList.remove("locked");
+            else el.classList.add("locked");
+        });
+        renderSimboli();
+        renderCloudCollaboration(currentEventId);
+
+        Object.keys(markersRegistry).forEach(function(k) {
+            const entry = markersRegistry[k];
+            if (entry.marker && entry.marker.dragging) {
+                if (isEditable) entry.marker.dragging.enable();
+                else entry.marker.dragging.disable();
+            }
+            aggiornaIconaMarker(entry);
+        });
+        Object.keys(polygonsRegistry).forEach(function(k) {
+            const p = polygonsRegistry[k];
+            p.layer.setPopupContent(getPolygonPopupContent(p));
+        });
+    }
+
+    function promptUnlockCurrentEvent() {
+        if (!operatorModeActive) {
+            alert("Inserisca prima Nome/Qualifica e clicchi su 'Abilita Modalità Operatore'.");
+            return false;
+        }
+        if (!currentEventId || !currentEventPassword) {
+            applyEditStateToUi();
+            return true;
+        }
+        if (unlockedEventIds[currentEventId]) {
+            applyEditStateToUi();
+            return true;
+        }
+        const entered = prompt("Inserisca la password impostata per questo evento:");
+        if (entered === null) return false;
+        if (entered !== currentEventPassword) {
+            alert("Password evento errata. L'evento resta in sola lettura.");
+            return false;
+        }
+        unlockedEventIds[currentEventId] = true;
+        applyEditStateToUi();
+        registraLog("Evento sbloccato con password dedicata.");
+        return true;
+    }
+
+    function sbloccaModifica() {
+        const nome = document.getElementById("op-name-input").value.trim();
+        const email = document.getElementById("op-email-input").value.trim();
+        const role = document.getElementById("op-role-input").value.trim() || "DOS / Responsabile";
+        if (!nome) return alert("Inserire Nome e Cognome / Qualifica dell'operatore.");
+
+        currentOperator = nome;
+        currentOperatorEmail = email;
+        currentOperatorRole = role;
+        operatorModeActive = true;
+
+        document.getElementById("op-active-label").textContent = "Operatore: " + currentOperator;
+        document.getElementById("op-meta-label").textContent = (email ? email + " | " : "") + role;
+        document.getElementById("login-area").style.display = "none";
+        document.getElementById("logout-area").style.display = "block";
+        applyEditStateToUi();
+        registraLog("Modalita operatore attiva (" + role + ").");
+        return true;
+    }
+
+    function bloccaModifica() {
+        cancelDrawPolygon();
+        registraLog("Tornato in sola lettura libera.");
+        operatorModeActive = false;
+        isEditable = false;
+        currentOperator = "";
+        selectedMarkerUid = null;
+        document.getElementById("login-area").style.display = "block";
+        document.getElementById("logout-area").style.display = "none";
+        applyEditStateToUi();
+    }
+
+    function registraLog(testo) {
+        const ora = new Date().toLocaleTimeString();
+        const autore = currentOperator || "Consultazione";
+        const line = "[" + ora + "] <b>" + escapeHtml(autore) + ":</b> " + testo;
+        logsRegistry.push(line);
+        const box = document.getElementById("log-container");
+        if (box.textContent.indexOf("Nessuna modifica") !== -1) {
+            box.innerHTML = "";
+        }
+        box.innerHTML += line + "<br>";
+        box.scrollTop = box.scrollHeight;
+    }
+
+
+    window._sitacSelectMarker = function(uid) {
+        selectedMarkerUid = uid;
+        Object.keys(markersRegistry).forEach(function(k) {
+            if (markersRegistry[k].marker) aggiornaIconaMarker(markersRegistry[k]);
+        });
+    };
+
+    window._sitacStartWordResize = function(ev, uid) {
+        if (!isEditable) return;
+        const entry = markersRegistry[uid];
+        if (!entry) return;
+        if (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+        selectedMarkerUid = uid;
+        if (map && map.dragging) map.dragging.disable();
+        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const zf = getZoomScaleFactor(entry);
+        entry.stretchX = Number(((entry.stretchX || 1.0) * zf).toFixed(4));
+        entry.stretchY = Number(((entry.stretchY || 1.0) * zf).toFixed(4));
+        if (map) entry.baseZoom = map.getZoom();
+        wordResizeState = {
+            uid: uid,
+            startX: pt.clientX,
+            startY: pt.clientY,
+            baseStretchX: entry.stretchX,
+            baseStretchY: entry.stretchY,
+            baseScale: entry.scale || 1.0
+        };
+    };
+
+    function onWordResizeMove(ev) {
+        if (!wordResizeState || !isEditable) return;
+        const entry = markersRegistry[wordResizeState.uid];
+        if (!entry) return;
+        if (ev && ev.cancelable) ev.preventDefault();
+        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const dx = pt.clientX - wordResizeState.startX;
+        const dy = pt.clientY - wordResizeState.startY;
+
+        if (ev && ev.shiftKey) {
+            const delta = (dx + dy) * 0.015;
+            entry.scale = Math.max(0.5, Math.min(3.5, Number((wordResizeState.baseScale + delta).toFixed(2))));
+        } else {
+            entry.stretchX = Math.max(0.4, Math.min(4.0, Number((wordResizeState.baseStretchX + dx * 0.02).toFixed(2))));
+            entry.stretchY = Math.max(0.4, Math.min(4.0, Number((wordResizeState.baseStretchY + dy * 0.02).toFixed(2))));
+        }
+        aggiornaIconaMarker(entry);
+    }
+
+    function onWordResizeEnd() {
+        if (!wordResizeState) return;
+        const entry = markersRegistry[wordResizeState.uid];
+        if (map && map.dragging) map.dragging.enable();
+        if (entry) {
+            registraLog("Stirato #" + entry.sym.id + " (L:" + Math.round(entry.stretchX * 100) + "%, A:" + Math.round(entry.stretchY * 100) + "%, S:" + Math.round(entry.scale * 100) + "%)");
+        }
+        wordResizeState = null;
+    }
+
+    document.addEventListener("mousemove", onWordResizeMove, { passive: false });
+    document.addEventListener("mouseup", onWordResizeEnd);
+    document.addEventListener("touchmove", onWordResizeMove, { passive: false });
+    document.addEventListener("touchend", onWordResizeEnd);
+
+
+
+    let wordRotateState = null;
+
+    window._sitacStartRotate = function(ev, uid) {
+        if (!isEditable) return;
+        const entry = markersRegistry[uid];
+        if (!entry || !entry.marker) return;
+        if (ev) {
+            ev.preventDefault();
+            ev.stopPropagation();
+        }
+        selectedMarkerUid = uid;
+        if (map && map.dragging) map.dragging.disable();
+        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const rect = entry.marker.getElement().getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const startAngle = Math.atan2(pt.clientY - cy, pt.clientX - cx) * 180 / Math.PI;
+        wordRotateState = {
+            uid: uid,
+            cx: cx,
+            cy: cy,
+            startAngle: startAngle,
+            baseRot: entry.rot || 0
+        };
+    };
+
+    function onWordRotateMove(ev) {
+        if (!wordRotateState || !isEditable) return;
+        const entry = markersRegistry[wordRotateState.uid];
+        if (!entry) return;
+        if (ev && ev.cancelable) ev.preventDefault();
+        const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const ang = Math.atan2(pt.clientY - wordRotateState.cy, pt.clientX - wordRotateState.cx) * 180 / Math.PI;
+        let deg = Math.round(wordRotateState.baseRot + (ang - wordRotateState.startAngle));
+        if (ev && ev.shiftKey) deg = Math.round(deg / 15) * 15;
+        entry.rot = ((deg % 360) + 360) % 360;
+        aggiornaIconaMarker(entry);
+    }
+
+    function onWordRotateEnd() {
+        if (!wordRotateState) return;
+        const entry = markersRegistry[wordRotateState.uid];
+        if (map && map.dragging) map.dragging.enable();
+        if (entry) {
+            registraLog("Ruotato #" + entry.sym.id + " (" + entry.rot + " deg)");
+        }
+        wordRotateState = null;
+    }
+
+    document.addEventListener("mousemove", onWordRotateMove, { passive: false });
+    document.addEventListener("mouseup", onWordRotateEnd);
+    document.addEventListener("touchmove", onWordRotateMove, { passive: false });
+    document.addEventListener("touchend", onWordRotateEnd);
+
+    function initApp() {
+        document.getElementById("btn-toggle-intro").addEventListener("click", function() {
+            const body = document.getElementById("intro-body");
+            const hidden = body.style.display === "none";
+            body.style.display = hidden ? "block" : "none";
+            this.textContent = hidden ? "Riduci" : "Info";
+        });
+
+        document.getElementById("wms-dropdown-toggle").addEventListener("change", function() {
+            const panel = document.getElementById("wms-layers-list");
+            panel.style.display = (this.value === "OPEN") ? "block" : "none";
+        });
+
+        document.getElementById("event-select").addEventListener("change", function() {
+            const chosenId = this.value;
+            if (!chosenId) return;
+            const found = safeReadStorage().find(function(ev) { return ev.id === chosenId; });
+            if (found) loadEventIntoMap(found);
+        });
+        document.getElementById("btn-gate-readonly").addEventListener("click", function() {
+            const gName = document.getElementById("gate-name").value.trim();
+            const gEmail = document.getElementById("gate-email").value.trim();
+            const gRole = document.getElementById("gate-role").value.trim();
+            if (gName) document.getElementById("op-name-input").value = gName;
+            if (gEmail) document.getElementById("op-email-input").value = gEmail;
+            if (gRole) document.getElementById("op-role-input").value = gRole;
+            document.getElementById("entry-gate").style.display = "none";
+            if (map) map.invalidateSize();
+        });
+        document.getElementById("btn-gate-edit").addEventListener("click", function() {
+            document.getElementById("op-name-input").value = document.getElementById("gate-name").value.trim();
+            document.getElementById("op-email-input").value = document.getElementById("gate-email").value.trim();
+            document.getElementById("op-role-input").value = document.getElementById("gate-role").value.trim() || "DOS / Responsabile";
+            if (sbloccaModifica()) {
+                document.getElementById("entry-gate").style.display = "none";
+                if (map) map.invalidateSize();
+            }
+        });
+        document.getElementById("btn-unlock-event").addEventListener("click", promptUnlockCurrentEvent);
+        document.getElementById("btn-cloud-sync").addEventListener("click", function() {
+            syncFromCloud(currentEventId, false);
+        });
+        document.getElementById("btn-cloud-add-entry").addEventListener("click", handleAddCloudEntry);
+        document.getElementById("btn-event-new").addEventListener("click", handleNewEvent);
+        document.getElementById("btn-event-save").addEventListener("click", handleSaveEvent);
+        document.getElementById("btn-event-del").addEventListener("click", handleDeleteEvent);
+        document.getElementById("btn-event-export").addEventListener("click", handleExportJson);
+        document.getElementById("btn-event-import").addEventListener("click", function() {
+            document.getElementById("event-import-file").click();
+        });
+        document.getElementById("event-import-file").addEventListener("change", handleImportJsonFile);
+
+        document.getElementById("scenario-select").addEventListener("change", function() {
+            populateSubscenarios();
+            renderSimboli();
+        });
+        document.getElementById("subscenario-select").addEventListener("change", renderSimboli);
+        document.getElementById("stato-sel").addEventListener("change", renderSimboli);
+        document.getElementById("search-input").addEventListener("input", renderSimboli);
+        document.getElementById("btn-unlock").addEventListener("click", sbloccaModifica);
+        document.getElementById("btn-lock").addEventListener("click", bloccaModifica);
+        document.getElementById("btn-gps-locate").addEventListener("click", richiediGps);
+        document.getElementById("btn-gps-share").addEventListener("click", condividiPosizioneGps);
+        document.getElementById("btn-meteo").addEventListener("click", aggiornaMeteoVento);
+
+        populateSubscenarios();
+        renderSimboli();
+        renderOverlayControls();
+        refreshEventDropdown("");
+
+        if (typeof L === "undefined") {
+            setDiag("Legenda e layer pronti | Mappa offline (Leaflet non raggiungibile)", true);
+            return;
+        }
+
+        try {
+            map = L.map("map").setView([currentLat, currentLng], 13);
+
+            const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}", {
+                maxZoom: 20, subdomains: ["mt0", "mt1", "mt2", "mt3"], attribution: "&copy; Google Maps"
+            });
+
+            const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19, attribution: "&copy; OpenStreetMap"
+            });
+
+            googleSat.addTo(map);
+            L.control.layers({ "Google Satellite": googleSat, "OpenStreetMap": osm }, {}).addTo(map);
+
+            map.on("click", function(e) {
+                if (selectedMarkerUid !== null) {
+                    const prevUid = selectedMarkerUid;
+                    selectedMarkerUid = null;
+                    if (markersRegistry[prevUid] && markersRegistry[prevUid].marker) {
+                        aggiornaIconaMarker(markersRegistry[prevUid]);
+                    }
+                }
+                if (!isDrawingPoly || !isEditable) return;
+                polyPoints.push([e.latlng.lat, e.latlng.lng]);
+                updatePolyDraft();
+            });
+
+            map.on("zoomend", function() {
+                Object.keys(markersRegistry).forEach(function(k) {
+                    const e = markersRegistry[k];
+                    if (e && e.sym && GEO_ANCHORED_IDS.has(e.sym.id) && e.marker) {
+                        aggiornaIconaMarker(e);
+                    }
+                });
+            });
+
+            map.on("dblclick", function(e) {
+                if (!isDrawingPoly || !isEditable) return;
+                L.DomEvent.stopPropagation(e);
+                finishDrawPolygon();
+            });
+
+            applicaPosizioneCondivisaDaUrl();
+
+            syncFromCloud("", true);
+
+            map.locate({ setView: false, maxZoom: 15 });
+            map.on("locationfound", function(e) {
+                aggiornaGpsMarker(e.latlng.lat, e.latlng.lng, e.accuracy);
+            });
+
+            setDiag("Sistema pronto | Eventi + 4 Scenari + Poligono + GPS", false);
+        } catch (err) {
+            setDiag("Errore mappa: " + err.message, true);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+        initApp();
+    }
+})();
+</script>
+</body>
+</html>
