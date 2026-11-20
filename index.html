@@ -963,7 +963,7 @@
                 field: "summary",
                 new_value: packedSummary
             });
-            registraLog("Aggiornato evento online "" + snap.title + """);
+            registraLog("Aggiornato evento online '" + snap.title + "'");
         } else {
             postToCloud({
                 action: "create_event",
@@ -973,7 +973,7 @@
                 role: me.role,
                 status: "Aperto"
             });
-            registraLog("Creato nuovo evento online "" + snap.title + """);
+            registraLog("Creato nuovo evento online '" + snap.title + "'");
         }
     }
 
