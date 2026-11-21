@@ -99,21 +99,42 @@
         .edit-only-box.locked { opacity: 0.55; pointer-events: none; }
 
         .sitac-icon { overflow: visible !important; }
-        .sitac-wrapper.selected-item .sitac-shape { outline: 1.5px dashed #2563eb; outline-offset: 2px; }
-
+        .word-frame {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+        .sitac-wrapper.selected-item .word-frame {
+            outline: 1.5px solid #2563eb;
+            background: rgba(37, 99, 235, 0.08);
+        }
+        .word-rotate-stem {
+            position: absolute; top: -22px; left: 50%; width: 2px; height: 18px;
+            background: #2563eb; transform: translateX(-50%); pointer-events: none;
+        }
         .word-rotate-handle {
-            position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
-            width: 13px; height: 13px; background: #16a34a; border: 2px solid #ffffff;
-            border-radius: 50%; cursor: grab; z-index: 2500;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.45); touch-action: none;
+            position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+            width: 16px; height: 16px; background: #16a34a; border: 2px solid #ffffff;
+            border-radius: 50%; cursor: grab; z-index: 3000;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.6); touch-action: none;
         }
         .word-rotate-handle:active { cursor: grabbing; }
-        .word-resize-handle {
-            position: absolute; right: -7px; bottom: -7px; width: 13px; height: 13px;
-            background: #2563eb; border: 2px solid #ffffff; border-radius: 2px;
-            cursor: nwse-resize; z-index: 2500; box-shadow: 0 1px 3px rgba(0,0,0,0.45);
-            touch-action: none;
+        .word-h {
+            position: absolute; width: 11px; height: 11px;
+            background: #ffffff; border: 2px solid #2563eb; border-radius: 2px;
+            z-index: 3000; box-shadow: 0 1px 3px rgba(0,0,0,0.5); touch-action: none;
         }
+        .word-h-nw { top: -6px; left: -6px; cursor: nwse-resize; }
+        .word-h-n  { top: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+        .word-h-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+        .word-h-e  { top: 50%; right: -6px; transform: translateY(-50%); cursor: ew-resize; }
+        .word-h-se { bottom: -6px; right: -6px; cursor: nwse-resize; background: #2563eb; }
+        .word-h-s  { bottom: -6px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+        .word-h-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+        .word-h-w  { top: 50%; left: -6px; transform: translateY(-50%); cursor: ew-resize; }
 
         .sitac-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .sitac-shape { display: flex; align-items: center; justify-content: center; transform-origin: center center; }
@@ -277,7 +298,10 @@
             <option value="">-- Seleziona un evento online --</option>
         </select>
         <div id="event-active-info" class="event-meta">Nessun evento caricato.</div>
-        <div class="edit-only-box locked" id="event-edit-controls" style="margin-top:5px;">
+        <div id="operator-event-bar" style="margin-top:5px; display:none;">
+            <button type="button" class="action-btn" id="btn-event-new" style="background:#0369a1; margin-bottom:5px;">+ Crea Nuovo Evento Pulito</button>
+        </div>
+        <div class="edit-only-box locked" id="event-edit-controls" style="margin-top:4px;">
             <input type="text" id="event-title-input" placeholder="Titolo evento (es. Esercitazione Corteno)..." style="margin-bottom:4px;">
             <input type="password" id="event-pwd-input" placeholder="Password dedicata a questo evento (chi crea sceglie la sua)..." style="margin-bottom:4px;">
             <label style="display:flex; align-items:center; gap:5px; font-size:11px; margin-bottom:4px; cursor:pointer;">
@@ -285,7 +309,6 @@
                 Etichetta [TEST / PROVA]
             </label>
             <div style="display:flex; gap:4px;">
-                <button type="button" class="small-btn" id="btn-event-new" style="flex:1; background:#0369a1; color:#fff;">Nuovo Evento</button>
                 <button type="button" class="small-btn" id="btn-event-save" style="flex:1; background:#15803d; color:#fff;">Salva Online</button>
                 <button type="button" class="small-btn" id="btn-event-del" style="background:#b91c1c; color:#fff;">Chiudi / Rimuovi</button>
             </div>
@@ -308,11 +331,16 @@
     </div>
 
     <div class="box-section">
-        <b>Posizione GPS / Condivisione:</b>
+        <b>Posizione GPS / Invito Operatori:</b>
         <div id="gps-status" class="gps-share-box">GPS non ancora rilevato.</div>
+        <div id="live-gps-summary" class="event-meta">Operatori in movimento: nessuno rilevato.</div>
         <div style="display:flex; gap:4px; margin-top:4px;">
             <button type="button" class="small-btn" id="btn-gps-locate" style="flex:1; background:#0369a1; color:#fff;">Aggiorna GPS</button>
-            <button type="button" class="small-btn" id="btn-gps-share" style="flex:1; background:#15803d; color:#fff;">Condividi / Copia Link</button>
+            <button type="button" class="small-btn" id="btn-gps-share" style="flex:1; background:#15803d; color:#fff;">Copia Link Posizione</button>
+        </div>
+        <div style="display:flex; gap:4px; margin-top:4px;">
+            <button type="button" class="small-btn" id="btn-invite-event" style="flex:1; background:#7c3aed; color:#fff;">Copia Link Invito Evento</button>
+            <button type="button" class="small-btn" id="btn-gps-live-toggle" style="flex:1; background:#0f766e; color:#fff;">Avvia GPS Live</button>
         </div>
         <div id="gps-link-box" class="gps-coords-line" style="display:none;"></div>
     </div>
@@ -434,13 +462,9 @@
     };
 
     const OVERLAY_CONFIGS = [
-        { id: "ctr", label: "CTR / Base Cartografica (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Cartografia_di_Base/CTR/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.75 },
-        { id: "pai", label: "PAI / Rischio Idrogeologico (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Difesa_del_Suolo/PAI/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
-        { id: "pgra", label: "PGRA / Alluvioni (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Difesa_del_Suolo/PGRA/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
-        { id: "aib", label: "AIB / Boschi e Foreste (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Foreste/Boschi/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
-        { id: "sentieri", label: "Sentieri / Rete Escursionistica (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Turismo/Sentieri/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.85 },
-        { id: "ped", label: "PED / Dighe (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Protezione_Civile/PED/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 },
-        { id: "pra", label: "PRA / Valanghe (RL)", url: "https://www.geoportale.regione.lombardia.it/arcgis/services/Protezione_Civile/PRA/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.65 }
+        { id: "ctr", label: "CTR / Base Cartografica (RL)", type: "wms", url: "https://www.cartografia.servizirl.it/arcgis/services/wms/ctr_wms/MapServer/WMSServer", wmsLayers: "0", defaultOn: false, defaultOpacity: 0.75 },
+        { id: "aree_rme_pai", label: "Aree RME Titolo IV PAI (GeoJSON locale)", type: "geojson", url: "aree_rme_titoloiv_pai.geojson", color: "#dc2626", fillColor: "#ef4444", defaultOn: false, defaultOpacity: 0.70 },
+        { id: "elementi_esposti", label: "Categorie Rischio Elementi Esposti (GeoJSON locale)", type: "geojson", url: "Categorie_rischio_elementi_esposti_poligonali_semplificato.geojson", color: "#d97706", fillColor: "#f59e0b", defaultOn: false, defaultOpacity: 0.70 }
     ];
 
     const SIMBOLI = [
@@ -703,6 +727,7 @@
                     return;
                 }
             }
+            aggiornaMarkerOperatoriRemoti();
             if (autoLoadFirst && mappedEvents.length > 0 && !(new URLSearchParams(window.location.search || "").get("gps"))) {
                 loadEventIntoMap(mappedEvents[0]);
             }
@@ -983,7 +1008,8 @@
         const title = titleEl.value.trim() || ("Evento " + new Date().toLocaleTimeString("it-IT"));
         clearMapElements();
         currentEventId = "";
-        currentEventPassword = pwdEl ? pwdEl.value : "";
+        currentEventPassword = "";
+        if (pwdEl) pwdEl.value = "";
         titleEl.value = title;
         applyEditStateToUi();
         document.getElementById("event-active-info").innerHTML = "Nuovo evento in corso: <b>" + escapeHtml(title) + "</b> (scelga la password evento e premi Salva Online)";
@@ -1172,9 +1198,168 @@
         registraLog("Condivisa posizione GPS (" + currentLat + ", " + currentLng + ") di " + who);
     }
 
+    let liveGpsWatchId = null;
+    let liveGpsPollTimer = null;
+    let lastLivePushAt = 0;
+    const remoteOperatorMarkers = {};
+
+    function getBaseAppUrl() {
+        if (window.location.href && window.location.href.indexOf("http") === 0) {
+            return window.location.href.split("?")[0].split("#")[0];
+        }
+        return "https://fiolettigiovanni-sudo.github.io/Sitac-ANA/";
+    }
+
+    function copiaLinkInvitoEvento() {
+        const evId = currentEventId || document.getElementById("event-select").value || "";
+        const url = evId ? (getBaseAppUrl() + "?event=" + encodeURIComponent(evId)) : getBaseAppUrl();
+        const box = document.getElementById("gps-link-box");
+        if (box) {
+            box.style.display = "block";
+            box.innerHTML = "<b>Link invito evento" + (evId ? " (" + escapeHtml(evId) + ")" : "") + ":</b><br>" + escapeHtml(url);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).catch(function() {});
+        }
+        registraLog("Copiato link invito evento" + (evId ? " " + evId : ""));
+    }
+
+    function inviaPosizioneLiveCloud(lat, lng, acc) {
+        const now = Date.now();
+        if (now - lastLivePushAt < 8000) return;
+        lastLivePushAt = now;
+        const evId = currentEventId || "LIVE_TRACK";
+        const me = getCurrentUserPayload();
+        const label = (me.name || "Operatore") + (me.role ? " (" + me.role + ")" : "");
+        const ora = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const accTxt = acc ? Math.round(acc) + "m" : "n/d";
+        const noteLive = "GPS_LIVE|" + label + "|" + Number(lat).toFixed(6) + "|" + Number(lng).toFixed(6) + "|" + accTxt + "|" + ora;
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "add_entry",
+                event_id: evId,
+                note: noteLive,
+                role: me.role || "GPS Live",
+                user: me
+            })
+        }).catch(function() {});
+    }
+
+    function aggiornaMarkerOperatoriRemoti() {
+        if (!map || typeof L === "undefined") return;
+        const allEntries = Array.isArray(cloudState.entries) ? cloudState.entries : [];
+        const targetEvId = currentEventId || "";
+        const latestByWho = {};
+
+        allEntries.forEach(function(en) {
+            const rawNote = String(en.note || "");
+            if (rawNote.indexOf("GPS_LIVE|") !== 0) return;
+            if (targetEvId && en.event_id && en.event_id !== targetEvId) return;
+            const parts = rawNote.split("|");
+            if (parts.length < 5) return;
+            const who = parts[1] || en.author_name || "Operatore";
+            const lat = parseFloat(parts[2]);
+            const lng = parseFloat(parts[3]);
+            const acc = parts[4] || "";
+            const ts = parts[5] || en.created_at || "";
+            if (isNaN(lat) || isNaN(lng)) return;
+            latestByWho[who] = { who: who, lat: lat, lng: lng, acc: acc, ts: ts };
+        });
+
+        const activeNames = Object.keys(latestByWho);
+        Object.keys(remoteOperatorMarkers).forEach(function(existingWho) {
+            if (activeNames.indexOf(existingWho) === -1) {
+                map.removeLayer(remoteOperatorMarkers[existingWho]);
+                delete remoteOperatorMarkers[existingWho];
+            }
+        });
+
+        activeNames.forEach(function(who) {
+            const item = latestByWho[who];
+            const popupHtml = "<b>Operatore in movimento:</b> " + escapeHtml(item.who) +
+                "<br>Coord: " + item.lat.toFixed(6) + ", " + item.lng.toFixed(6) +
+                "<br>Prec.: " + escapeHtml(item.acc) + " &bull; Fix: " + escapeHtml(item.ts);
+            if (!remoteOperatorMarkers[who]) {
+                remoteOperatorMarkers[who] = L.circleMarker([item.lat, item.lng], {
+                    radius: 8,
+                    color: "#ffffff",
+                    weight: 2,
+                    fillColor: "#7c3aed",
+                    fillOpacity: 0.95
+                }).addTo(map).bindTooltip(who, { direction: "top" }).bindPopup(popupHtml);
+            } else {
+                remoteOperatorMarkers[who].setLatLng([item.lat, item.lng]).bindPopup(popupHtml);
+            }
+        });
+
+        const sumEl = document.getElementById("live-gps-summary");
+        if (sumEl) {
+            if (activeNames.length === 0) {
+                sumEl.textContent = "Operatori in movimento: nessuno rilevato.";
+            } else {
+                sumEl.innerHTML = "Operatori in movimento (<b>" + activeNames.length + "</b>): " +
+                    activeNames.map(function(w) { return escapeHtml(w) + " (" + escapeHtml(latestByWho[w].ts) + ")"; }).join(", ");
+            }
+        }
+    }
+
+    function toggleGpsLive() {
+        const btn = document.getElementById("btn-gps-live-toggle");
+        if (liveGpsWatchId !== null) {
+            if (navigator.geolocation && navigator.geolocation.clearWatch) {
+                navigator.geolocation.clearWatch(liveGpsWatchId);
+            }
+            liveGpsWatchId = null;
+            if (liveGpsPollTimer) {
+                clearInterval(liveGpsPollTimer);
+                liveGpsPollTimer = null;
+            }
+            if (btn) {
+                btn.textContent = "Avvia GPS Live";
+                btn.style.background = "#0f766e";
+            }
+            registraLog("Tracciamento GPS live fermato.");
+            return;
+        }
+
+        if (!navigator.geolocation) {
+            alert("Geolocalizzazione non supportata dal browser.");
+            return;
+        }
+
+        if (btn) {
+            btn.textContent = "Ferma GPS Live";
+            btn.style.background = "#b91c1c";
+        }
+        registraLog("Avviato tracciamento GPS live verso sala operativa.");
+
+        liveGpsWatchId = navigator.geolocation.watchPosition(
+            function(pos) {
+                aggiornaGpsMarker(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                inviaPosizioneLiveCloud(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+            },
+            function(err) {
+                registraLog("Avviso GPS live: " + (err && err.message ? err.message : "errore"));
+            },
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+
+        aggiornaMarkerOperatoriRemoti();
+        liveGpsPollTimer = setInterval(function() {
+            syncFromCloud(currentEventId, false).then(aggiornaMarkerOperatoriRemoti).catch(function() {});
+        }, 12000);
+    }
+
     function applicaPosizioneCondivisaDaUrl() {
         try {
             const params = new URLSearchParams(window.location.search || "");
+            const evParam = params.get("event");
+            if (evParam) {
+                currentEventId = evParam;
+            }
             const gpsParam = params.get("gps");
             if (!gpsParam) return;
             const parts = gpsParam.split(",");
@@ -1298,6 +1483,9 @@
         const badge = document.getElementById("event-lock-badge");
         const statusEl = document.getElementById("status-lock");
 
+        const opBar = document.getElementById("operator-event-bar");
+        if (opBar) opBar.style.display = operatorModeActive ? "block" : "none";
+
         if (!operatorModeActive) {
             if (statusEl) statusEl.innerHTML = "Stato: <b>Sola Lettura Libera</b>";
             if (lockBtn) lockBtn.style.display = "none";
@@ -1406,23 +1594,45 @@
         box.scrollTop = box.scrollHeight;
     }
 
-    window._sitacSelectMarker = function(uid) {
+    window._sitacSelectMarker = function(uid, ev) {
+        if (ev) ev.stopPropagation();
+        if (selectedMarkerUid === uid) return;
+        const prev = selectedMarkerUid;
         selectedMarkerUid = uid;
-        Object.keys(markersRegistry).forEach(function(k) {
-            if (markersRegistry[k].marker) aggiornaIconaMarker(markersRegistry[k]);
-        });
+        if (prev && markersRegistry[prev] && markersRegistry[prev].marker) {
+            aggiornaIconaMarker(markersRegistry[prev]);
+        }
+        if (uid && markersRegistry[uid] && markersRegistry[uid].marker) {
+            aggiornaIconaMarker(markersRegistry[uid]);
+        }
     };
 
-    window._sitacStartWordResize = function(ev, uid) {
+    function applyLiveTransformToMarkerDom(entry) {
+        if (!entry || !entry.marker) return;
+        const el = entry.marker.getElement();
+        if (!el) return;
+        const shapeEl = el.querySelector(".sitac-shape");
+        if (!shapeEl) return;
+        const zf = getZoomScaleFactor(entry);
+        const effScale = (entry.scale || 1.0) * zf;
+        const sx = effScale * (entry.stretchX || 1.0);
+        const sy = effScale * (entry.stretchY || 1.0);
+        const rDeg = entry.rot || 0;
+        shapeEl.style.transform = "rotate(" + rDeg + "deg) scale(" + sx.toFixed(3) + ", " + sy.toFixed(3) + ")";
+    }
+
+    window._sitacStartWordResize = function(ev, uid, dir) {
         if (!isEditable) return;
         const entry = markersRegistry[uid];
-        if (!entry) return;
+        if (!entry || !entry.marker) return;
         if (ev) {
             ev.preventDefault();
             ev.stopPropagation();
+            if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
         }
         selectedMarkerUid = uid;
         if (map && map.dragging) map.dragging.disable();
+        if (entry.marker.dragging) entry.marker.dragging.disable();
         const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
         const zf = getZoomScaleFactor(entry);
         entry.stretchX = Number(((entry.stretchX || 1.0) * zf).toFixed(4));
@@ -1430,6 +1640,7 @@
         if (map) entry.baseZoom = map.getZoom();
         wordResizeState = {
             uid: uid,
+            dir: dir || "se",
             startX: pt.clientX,
             startY: pt.clientY,
             baseStretchX: entry.stretchX,
@@ -1444,25 +1655,39 @@
         if (!entry) return;
         if (ev && ev.cancelable) ev.preventDefault();
         const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-        const dx = pt.clientX - wordResizeState.startX;
-        const dy = pt.clientY - wordResizeState.startY;
+        const rawDx = pt.clientX - wordResizeState.startX;
+        const rawDy = pt.clientY - wordResizeState.startY;
+        const dir = wordResizeState.dir;
 
-        if (ev && ev.shiftKey) {
+        const signX = (dir.indexOf("w") !== -1) ? -1 : ((dir.indexOf("e") !== -1) ? 1 : 0);
+        const signY = (dir.indexOf("n") !== -1) ? -1 : ((dir.indexOf("s") !== -1) ? 1 : 0);
+        const dx = rawDx * signX;
+        const dy = rawDy * signY;
+
+        if (signX !== 0 && signY !== 0 && !(ev && ev.altKey)) {
             const delta = (dx + dy) * 0.015;
-            entry.scale = Math.max(0.5, Math.min(3.5, Number((wordResizeState.baseScale + delta).toFixed(2))));
+            const factor = Math.max(0.4, Math.min(4.0, 1 + delta));
+            entry.stretchX = Number(Math.max(0.35, Math.min(5.0, wordResizeState.baseStretchX * factor)).toFixed(2));
+            entry.stretchY = Number(Math.max(0.35, Math.min(5.0, wordResizeState.baseStretchY * factor)).toFixed(2));
         } else {
-            entry.stretchX = Math.max(0.4, Math.min(4.0, Number((wordResizeState.baseStretchX + dx * 0.02).toFixed(2))));
-            entry.stretchY = Math.max(0.4, Math.min(4.0, Number((wordResizeState.baseStretchY + dy * 0.02).toFixed(2))));
+            if (signX !== 0) {
+                entry.stretchX = Math.max(0.35, Math.min(5.0, Number((wordResizeState.baseStretchX + dx * 0.022).toFixed(2))));
+            }
+            if (signY !== 0) {
+                entry.stretchY = Math.max(0.35, Math.min(5.0, Number((wordResizeState.baseStretchY + dy * 0.022).toFixed(2))));
+            }
         }
-        aggiornaIconaMarker(entry);
+        applyLiveTransformToMarkerDom(entry);
     }
 
     function onWordResizeEnd() {
         if (!wordResizeState) return;
         const entry = markersRegistry[wordResizeState.uid];
         if (map && map.dragging) map.dragging.enable();
+        if (entry && entry.marker && entry.marker.dragging && isEditable) entry.marker.dragging.enable();
         if (entry) {
-            registraLog("Stirato #" + entry.sym.id + " (L:" + Math.round(entry.stretchX * 100) + "%, A:" + Math.round(entry.stretchY * 100) + "%, S:" + Math.round(entry.scale * 100) + "%)");
+            aggiornaIconaMarker(entry);
+            registraLog("Ridimensionato/stirato #" + entry.sym.id + " (L:" + Math.round(entry.stretchX * 100) + "%, A:" + Math.round(entry.stretchY * 100) + "%)");
         }
         wordResizeState = null;
     }
@@ -1479,13 +1704,16 @@
         if (ev) {
             ev.preventDefault();
             ev.stopPropagation();
+            if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
         }
         selectedMarkerUid = uid;
         if (map && map.dragging) map.dragging.disable();
+        if (entry.marker.dragging) entry.marker.dragging.disable();
         const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
         const el = entry.marker.getElement();
         if (!el) return;
-        const rect = el.getBoundingClientRect();
+        const frame = el.querySelector(".word-frame") || el;
+        const rect = frame.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
         const startAngle = Math.atan2(pt.clientY - cy, pt.clientX - cx) * 180 / Math.PI;
@@ -1508,14 +1736,16 @@
         let deg = Math.round(wordRotateState.baseRot + (ang - wordRotateState.startAngle));
         if (ev && ev.shiftKey) deg = Math.round(deg / 15) * 15;
         entry.rot = ((deg % 360) + 360) % 360;
-        aggiornaIconaMarker(entry);
+        applyLiveTransformToMarkerDom(entry);
     }
 
     function onWordRotateEnd() {
         if (!wordRotateState) return;
         const entry = markersRegistry[wordRotateState.uid];
         if (map && map.dragging) map.dragging.enable();
+        if (entry && entry.marker && entry.marker.dragging && isEditable) entry.marker.dragging.enable();
         if (entry) {
+            aggiornaIconaMarker(entry);
             registraLog("Ruotato #" + entry.sym.id + " (" + entry.rot + " deg)");
         }
         wordRotateState = null;
@@ -1561,9 +1791,62 @@
             const rng = item.querySelector("#wms-op-" + cfg.id);
             const valSpan = item.querySelector("#wms-op-val-" + cfg.id);
 
+            const applyOverlayOpacity = function(layer, op) {
+                if (!layer) return;
+                if (typeof layer.setOpacity === "function") {
+                    layer.setOpacity(op);
+                } else if (typeof layer.setStyle === "function") {
+                    layer.setStyle({ opacity: op, fillOpacity: Math.min(0.65, op * 0.45) });
+                }
+            };
+
             chk.addEventListener("change", function() {
                 if (!map || typeof L === "undefined") return;
+                const opVal = parseFloat(rng.value) || cfg.defaultOpacity;
                 if (this.checked) {
+                    if (cfg.type === "geojson") {
+                        if (!overlayRegistry[cfg.id]) {
+                            fetch(cfg.url + "?t=" + Date.now())
+                                .then(function(r) {
+                                    if (!r.ok) throw new Error("HTTP " + r.status);
+                                    return r.json();
+                                })
+                                .then(function(gj) {
+                                    if (!chk.checked) return;
+                                    const geoLayer = L.geoJSON(gj, {
+                                        style: function() {
+                                            return {
+                                                color: cfg.color || "#dc2626",
+                                                weight: 2,
+                                                opacity: opVal,
+                                                fillColor: cfg.fillColor || cfg.color || "#ef4444",
+                                                fillOpacity: Math.min(0.65, opVal * 0.45)
+                                            };
+                                        },
+                                        onEachFeature: function(feature, lyr) {
+                                            const props = feature && feature.properties ? feature.properties : {};
+                                            const keys = Object.keys(props).slice(0, 6);
+                                            const rows = keys.map(function(k) {
+                                                return "<b>" + escapeHtml(k) + ":</b> " + escapeHtml(props[k]);
+                                            }).join("<br>");
+                                            lyr.bindPopup("<div style='font-size:11px;'><b>" + escapeHtml(cfg.label) + "</b>" + (rows ? "<br>" + rows : "") + "</div>");
+                                        }
+                                    });
+                                    overlayRegistry[cfg.id] = geoLayer;
+                                    geoLayer.addTo(map);
+                                    registraLog("Caricato GeoJSON: " + cfg.label);
+                                })
+                                .catch(function(err) {
+                                    registraLog("Errore GeoJSON " + cfg.label + " (" + cfg.url + "): " + err.message);
+                                });
+                        } else {
+                            applyOverlayOpacity(overlayRegistry[cfg.id], opVal);
+                            overlayRegistry[cfg.id].addTo(map);
+                            registraLog("Attivato layer: " + cfg.label);
+                        }
+                        return;
+                    }
+
                     if (!overlayRegistry[cfg.id]) {
                         overlayRegistry[cfg.id] = L.tileLayer.wms(cfg.url, {
                             layers: cfg.wmsLayers || "0",
@@ -1572,14 +1855,14 @@
                             transparent: true,
                             version: "1.3.0",
                             crs: L.CRS.EPSG3857,
-                            opacity: parseFloat(rng.value) || cfg.defaultOpacity,
-                            attribution: "Geoportale Lombardia"
+                            opacity: opVal,
+                            attribution: "Geoportale RL"
                         });
                         overlayRegistry[cfg.id].on("tileerror", function() {
                             registraLog("Avviso: layer " + cfg.label + " non disponibile o bloccato dal server.");
                         });
                     }
-                    overlayRegistry[cfg.id].setOpacity(parseFloat(rng.value) || cfg.defaultOpacity);
+                    applyOverlayOpacity(overlayRegistry[cfg.id], opVal);
                     overlayRegistry[cfg.id].addTo(map);
                     registraLog("Attivato layer: " + cfg.label);
                 } else if (overlayRegistry[cfg.id]) {
@@ -1591,9 +1874,7 @@
             rng.addEventListener("input", function() {
                 const op = parseFloat(this.value) || 0.7;
                 valSpan.textContent = Math.round(op * 100) + "%";
-                if (overlayRegistry[cfg.id]) {
-                    overlayRegistry[cfg.id].setOpacity(op);
-                }
+                applyOverlayOpacity(overlayRegistry[cfg.id], op);
             });
         });
     }
@@ -1809,23 +2090,30 @@
         const effScale = (entry.scale || 1.0) * zf;
         const isSelected = (selectedMarkerUid === entry.uid) && isEditable;
         const safeUid = String(entry.uid).replace(/[^a-zA-Z0-9_-]/g, "");
-        const handlesHtml = isSelected
-            ? '<div class="word-rotate-handle" title="Trascina per ruotare" onmousedown="window._sitacStartRotate(event, \'' + safeUid + '\')" ontouchstart="window._sitacStartRotate(event, \'' + safeUid + '\')"></div>' +
-              '<div class="word-resize-handle" title="Trascina per ridimensionare/stirare" onmousedown="window._sitacStartWordResize(event, \'' + safeUid + '\')" ontouchstart="window._sitacStartWordResize(event, \'' + safeUid + '\')"></div>'
-            : '';
+        const dirs = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+        let handlesHtml = "";
+        if (isSelected) {
+            handlesHtml += '<div class="word-rotate-stem"></div>';
+            handlesHtml += '<div class="word-rotate-handle" title="Trascina per ruotare" onmousedown="window._sitacStartRotate(event, \'' + safeUid + '\')" ontouchstart="window._sitacStartRotate(event, \'' + safeUid + '\')" onclick="event.stopPropagation()"></div>';
+            dirs.forEach(function(d) {
+                handlesHtml += '<div class="word-h word-h-' + d + '" title="Trascina per ridimensionare o stirare" onmousedown="window._sitacStartWordResize(event, \'' + safeUid + '\', \'' + d + '\')" ontouchstart="window._sitacStartWordResize(event, \'' + safeUid + '\', \'' + d + '\')" onclick="event.stopPropagation()"></div>';
+            });
+        }
         const captionHtml = entry.nota ? '<div class="sitac-caption">' + escapeHtml(entry.nota) + '</div>' : '';
         const html =
-            '<div class="sitac-wrapper' + (isSelected ? ' selected-item' : '') + '" onclick="window._sitacSelectMarker(\'' + safeUid + '\')">' +
-                handlesHtml +
-                buildSymbolGraphicHtml(entry.sym, entry.stato, effScale, entry.stretchX || 1.0, entry.stretchY || 1.0, entry.rot || 0) +
+            '<div class="sitac-wrapper' + (isSelected ? ' selected-item' : '') + '" onclick="window._sitacSelectMarker(\'' + safeUid + '\', event)">' +
+                '<div class="word-frame">' +
+                    handlesHtml +
+                    buildSymbolGraphicHtml(entry.sym, entry.stato, effScale, entry.stretchX || 1.0, entry.stretchY || 1.0, entry.rot || 0) +
+                '</div>' +
                 captionHtml +
             '</div>';
 
         return L.divIcon({
             className: "sitac-icon",
             html: html,
-            iconSize: [76, 46],
-            iconAnchor: [38, 23]
+            iconSize: [84, 52],
+            iconAnchor: [42, 26]
         });
     }
 
@@ -1849,14 +2137,7 @@
                         '<span>Nota:</span>' +
                         '<input type="text" id="pop-note-' + entry.uid + '" value="' + escapeHtml(entry.nota || "") + '" placeholder="Testo etichetta...">' +
                     '</div>' +
-                    '<div class="popup-ctrl-row">' +
-                        '<span>Rotazione (' + (entry.rot || 0) + '&deg;):</span>' +
-                        '<input type="range" min="0" max="359" value="' + (entry.rot || 0) + '" oninput="window._sitacUpdateMarkerProp(\'' + entry.uid + '\', \'rot\', this.value)">' +
-                    '</div>' +
-                    '<div class="popup-ctrl-row">' +
-                        '<span>Scala (' + Math.round((entry.scale || 1) * 100) + '%):</span>' +
-                        '<input type="range" min="0.5" max="3" step="0.1" value="' + (entry.scale || 1) + '" oninput="window._sitacUpdateMarkerProp(\'' + entry.uid + '\', \'scale\', this.value)">' +
-                    '</div>' +
+
                     '<div style="display:flex; gap:4px; margin-top:5px;">' +
                         '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSaveMarkerNote(\'' + entry.uid + '\')">Applica</button>' +
                         '<button type="button" class="small-btn" style="flex:1; background:#d97706; color:#fff;" onclick="window._sitacToggleMarkerStato(\'' + entry.uid + '\')">Stato</button>' +
@@ -2180,6 +2461,8 @@
         document.getElementById("btn-lock").addEventListener("click", bloccaModifica);
         document.getElementById("btn-gps-locate").addEventListener("click", richiediGps);
         document.getElementById("btn-gps-share").addEventListener("click", condividiPosizioneGps);
+        document.getElementById("btn-invite-event").addEventListener("click", copiaLinkInvitoEvento);
+        document.getElementById("btn-gps-live-toggle").addEventListener("click", toggleGpsLive);
         document.getElementById("btn-meteo").addEventListener("click", aggiornaMeteoVento);
 
         populateSubscenarios();
