@@ -2015,10 +2015,7 @@
     }
 
     function getZoomScaleFactor(entry) {
-        if (!map || !entry || !entry.sym || !GEO_ANCHORED_IDS.has(entry.sym.id)) return 1.0;
-        const baseZ = entry.baseZoom || 13;
-        const curZ = map.getZoom();
-        return Math.pow(2, curZ - baseZ);
+        return 1.0;
     }
 
     function buildMarkerDivIcon(entry) {
@@ -2066,21 +2063,18 @@
             html += '<div style="margin-top:4px; padding:3px 5px; background:#f1f5f9; border-radius:3px;"><b>Nota:</b> ' + escapeHtml(entry.nota) + '</div>';
         }
 
-        if (isEditable) {
-            html +=
-                '<div class="popup-ctrl">' +
-                    '<div class="popup-ctrl-row">' +
-                        '<span>Nota:</span>' +
-                        '<input type="text" id="pop-note-' + entry.uid + '" value="' + escapeHtml(entry.nota || "") + '" placeholder="Testo etichetta...">' +
-                    '</div>' +
-
-                    '<div style="display:flex; gap:4px; margin-top:5px;">' +
-                        '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSaveMarkerNote(\'' + entry.uid + '\')">Applica</button>' +
-                        '<button type="button" class="small-btn" style="flex:1; background:#d97706; color:#fff;" onclick="window._sitacToggleMarkerStato(\'' + entry.uid + '\')">Stato</button>' +
-                        '<button type="button" class="small-btn" style="background:#b91c1c; color:#fff;" onclick="window._sitacDeleteMarker(\'' + entry.uid + '\')">Elimina</button>' +
-                    '</div>' +
-                '</div>';
-        }
+        html +=
+            '<div class="popup-ctrl">' +
+                '<div class="popup-ctrl-row">' +
+                    '<span>Nota:</span>' +
+                    '<input type="text" id="pop-note-' + entry.uid + '" value="' + escapeHtml(entry.nota || "") + '" placeholder="Testo etichetta...">' +
+                '</div>' +
+                '<div style="display:flex; gap:4px; margin-top:5px;">' +
+                    '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSaveMarkerNote(\'' + entry.uid + '\')">Applica</button>' +
+                    '<button type="button" class="small-btn" style="flex:1; background:#d97706; color:#fff;" onclick="window._sitacToggleMarkerStato(\'' + entry.uid + '\')">Stato</button>' +
+                    '<button type="button" class="small-btn" style="background:#b91c1c; color:#fff;" onclick="window._sitacDeleteMarker(\'' + entry.uid + '\')">Elimina</button>' +
+                '</div>' +
+            '</div>';
         html += '</div>';
         return html;
     }
@@ -2104,23 +2098,28 @@
     };
 
     window._sitacSaveMarkerNote = function(uid) {
-        if (!isEditable) return;
         const entry = markersRegistry[uid];
         if (!entry) return;
         const inp = document.getElementById("pop-note-" + uid);
         if (inp) entry.nota = inp.value.trim();
         aggiornaIconaMarker(entry);
+        if (entry.marker && entry.marker.getPopup) {
+            entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+            entry.marker.openPopup();
+        }
         registraLog("Aggiornata nota #" + entry.sym.id + ": " + (entry.nota || "(vuota)"));
     };
 
     window._sitacToggleMarkerStato = function(uid) {
-        if (!isEditable) return;
         const entry = markersRegistry[uid];
         if (!entry) return;
+        const inp = document.getElementById("pop-note-" + uid);
+        if (inp) entry.nota = inp.value.trim();
         entry.stato = (entry.stato === "ACTIVE") ? "PLANNED" : "ACTIVE";
         aggiornaIconaMarker(entry);
         if (entry.marker && entry.marker.getPopup) {
             entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+            entry.marker.openPopup();
         }
         registraLog("Cambiato stato #" + entry.sym.id + " in " + (entry.stato === "ACTIVE" ? "Effettuata" : "Prevista"));
     };
@@ -2163,9 +2162,21 @@
         markersRegistry[uid] = entry;
 
         marker.bindPopup(getMarkerPopupHtml(entry));
-        marker.on("click", function() {
+        marker.on("click", function(ev) {
+            if (ev && ev.originalEvent) {
+                L.DomEvent.stopPropagation(ev.originalEvent);
+            }
             selectedMarkerUid = uid;
             aggiornaIconaMarker(entry);
+        });
+        marker.on("dblclick", function(ev) {
+            if (ev && ev.originalEvent) {
+                L.DomEvent.stopPropagation(ev.originalEvent);
+                L.DomEvent.preventDefault(ev.originalEvent);
+            }
+            selectedMarkerUid = uid;
+            aggiornaIconaMarker(entry);
+            marker.setPopupContent(getMarkerPopupHtml(entry));
             marker.openPopup();
         });
         marker.on("dragend", function() {
