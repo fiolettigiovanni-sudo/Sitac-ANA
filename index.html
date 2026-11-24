@@ -1589,6 +1589,18 @@
         box.scrollTop = box.scrollHeight;
     }
 
+    window._sitacOpenMarkerPopup = function(uid, ev) {
+        if (ev) {
+            ev.stopPropagation();
+            ev.preventDefault();
+        }
+        const entry = markersRegistry[uid];
+        if (!entry || !entry.marker) return;
+        selectedMarkerUid = uid;
+        entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+        entry.marker.openPopup();
+    };
+
     window._sitacSelectMarker = function(uid, ev) {
         if (ev) ev.stopPropagation();
         if (selectedMarkerUid === uid) return;
@@ -2015,8 +2027,8 @@
     }
 
     function getZoomScaleFactor(entry) {
-        if (!map || !entry || !entry.sym || !GEO_ANCHORED_IDS.has(entry.sym.id)) return 1.0;
-        const baseZ = entry.baseZoom || 13;
+        if (!map || !entry) return 1.0;
+        const baseZ = (typeof entry.baseZoom === "number") ? entry.baseZoom : 13;
         const curZ = map.getZoom();
         return Math.pow(2, curZ - baseZ);
     }
@@ -2037,7 +2049,7 @@
         }
         const captionHtml = entry.nota ? '<div class="sitac-caption">' + escapeHtml(entry.nota) + '</div>' : '';
         const html =
-            '<div class="sitac-wrapper' + (isSelected ? ' selected-item' : '') + '" onclick="window._sitacSelectMarker(\'' + safeUid + '\', event)">' +
+            '<div class="sitac-wrapper' + (isSelected ? ' selected-item' : '') + '" onclick="window._sitacSelectMarker(\'' + safeUid + '\', event)" ondblclick="window._sitacOpenMarkerPopup(\'' + safeUid + '\', event)">' +
                 '<div class="word-frame">' +
                     handlesHtml +
                     buildSymbolGraphicHtml(entry.sym, entry.stato, effScale, entry.stretchX || 1.0, entry.stretchY || 1.0, entry.rot || 0) +
@@ -2066,21 +2078,18 @@
             html += '<div style="margin-top:4px; padding:3px 5px; background:#f1f5f9; border-radius:3px;"><b>Nota:</b> ' + escapeHtml(entry.nota) + '</div>';
         }
 
-        if (isEditable) {
-            html +=
-                '<div class="popup-ctrl">' +
-                    '<div class="popup-ctrl-row">' +
-                        '<span>Nota:</span>' +
-                        '<input type="text" id="pop-note-' + entry.uid + '" value="' + escapeHtml(entry.nota || "") + '" placeholder="Testo etichetta...">' +
-                    '</div>' +
-
-                    '<div style="display:flex; gap:4px; margin-top:5px;">' +
-                        '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSaveMarkerNote(\'' + entry.uid + '\')">Applica</button>' +
-                        '<button type="button" class="small-btn" style="flex:1; background:#d97706; color:#fff;" onclick="window._sitacToggleMarkerStato(\'' + entry.uid + '\')">Stato</button>' +
-                        '<button type="button" class="small-btn" style="background:#b91c1c; color:#fff;" onclick="window._sitacDeleteMarker(\'' + entry.uid + '\')">Elimina</button>' +
-                    '</div>' +
-                '</div>';
-        }
+        html +=
+            '<div class="popup-ctrl">' +
+                '<div class="popup-ctrl-row">' +
+                    '<span>Nota:</span>' +
+                    '<input type="text" id="pop-note-' + entry.uid + '" value="' + escapeHtml(entry.nota || "") + '" placeholder="Testo etichetta...">' +
+                '</div>' +
+                '<div style="display:flex; gap:4px; margin-top:5px;">' +
+                    '<button type="button" class="small-btn" style="flex:1; background:#0369a1; color:#fff;" onclick="window._sitacSaveMarkerNote(\'' + entry.uid + '\')">Applica</button>' +
+                    '<button type="button" class="small-btn" style="flex:1; background:#d97706; color:#fff;" onclick="window._sitacToggleMarkerStato(\'' + entry.uid + '\')">Stato</button>' +
+                    '<button type="button" class="small-btn" style="background:#b91c1c; color:#fff;" onclick="window._sitacDeleteMarker(\'' + entry.uid + '\')">Elimina</button>' +
+                '</div>' +
+            '</div>';
         html += '</div>';
         return html;
     }
@@ -2104,23 +2113,28 @@
     };
 
     window._sitacSaveMarkerNote = function(uid) {
-        if (!isEditable) return;
         const entry = markersRegistry[uid];
         if (!entry) return;
         const inp = document.getElementById("pop-note-" + uid);
         if (inp) entry.nota = inp.value.trim();
         aggiornaIconaMarker(entry);
+        if (entry.marker && entry.marker.getPopup) {
+            entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+            entry.marker.openPopup();
+        }
         registraLog("Aggiornata nota #" + entry.sym.id + ": " + (entry.nota || "(vuota)"));
     };
 
     window._sitacToggleMarkerStato = function(uid) {
-        if (!isEditable) return;
         const entry = markersRegistry[uid];
         if (!entry) return;
+        const inp = document.getElementById("pop-note-" + uid);
+        if (inp) entry.nota = inp.value.trim();
         entry.stato = (entry.stato === "ACTIVE") ? "PLANNED" : "ACTIVE";
         aggiornaIconaMarker(entry);
         if (entry.marker && entry.marker.getPopup) {
             entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+            entry.marker.openPopup();
         }
         registraLog("Cambiato stato #" + entry.sym.id + " in " + (entry.stato === "ACTIVE" ? "Effettuata" : "Prevista"));
     };
@@ -2162,10 +2176,24 @@
         entry.marker = marker;
         markersRegistry[uid] = entry;
 
-        marker.bindPopup(getMarkerPopupHtml(entry));
-        marker.on("click", function() {
+        marker.bindPopup(getMarkerPopupHtml(entry), { autoPan: false, closeOnClick: false });
+        marker.on("click", function(ev) {
+            if (ev && ev.originalEvent) {
+                L.DomEvent.stopPropagation(ev.originalEvent);
+            }
             selectedMarkerUid = uid;
             aggiornaIconaMarker(entry);
+            marker.setPopupContent(getMarkerPopupHtml(entry));
+            marker.openPopup();
+        });
+        marker.on("dblclick", function(ev) {
+            if (ev && ev.originalEvent) {
+                L.DomEvent.stopPropagation(ev.originalEvent);
+                L.DomEvent.preventDefault(ev.originalEvent);
+            }
+            selectedMarkerUid = uid;
+            aggiornaIconaMarker(entry);
+            marker.setPopupContent(getMarkerPopupHtml(entry));
             marker.openPopup();
         });
         marker.on("dragend", function() {
@@ -2415,7 +2443,7 @@
         }
 
         try {
-            map = L.map("map").setView([currentLat, currentLng], 13);
+            map = L.map("map", { doubleClickZoom: false }).setView([currentLat, currentLng], 13);
 
             const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}", {
                 maxZoom: 20, subdomains: ["mt0", "mt1", "mt2", "mt3"], attribution: "&copy; Google Maps"
@@ -2444,7 +2472,7 @@
             map.on("zoomend", function() {
                 Object.keys(markersRegistry).forEach(function(k) {
                     const e = markersRegistry[k];
-                    if (e && e.sym && GEO_ANCHORED_IDS.has(e.sym.id) && e.marker) {
+                    if (e && e.marker) {
                         aggiornaIconaMarker(e);
                     }
                 });
