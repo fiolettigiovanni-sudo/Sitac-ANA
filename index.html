@@ -2164,8 +2164,9 @@
 
         marker.bindPopup(getMarkerPopupHtml(entry));
         marker.on("click", function() {
-            window._sitacSelectMarker(uid);
-            marker.setPopupContent(getMarkerPopupHtml(entry));
+            selectedMarkerUid = uid;
+            aggiornaIconaMarker(entry);
+            marker.openPopup();
         });
         marker.on("dragend", function() {
             const pos = marker.getLatLng();
