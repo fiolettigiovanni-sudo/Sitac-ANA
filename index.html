@@ -372,12 +372,7 @@
             <option value="ACTIVE">Attivo / Effettuata</option>
         </select>
 
-        <input type="text" id="search-input" placeholder="Filtra per nome, sigla o numero...">
-
-        <div id="edit-note-box" class="edit-only-box locked" style="margin-top:4px; border-top:1px dashed #ccc; padding-top:4px;">
-            <input type="text" id="note-input" placeholder="Scritta allegata (es. Squadra 12, Frana Nord)..." style="margin-bottom:0;">
         </div>
-    </div>
 
     <div class="box-section" style="padding:5px; margin-bottom:6px;">
         <b id="legend-header">Legenda Simboli:</b>
@@ -1890,83 +1885,6 @@
         const sy = (scale || 1) * (stretchY || 1);
         const rDeg = rot || 0;
         const transformCss = "transform: rotate(" + rDeg + "deg) scale(" + sx.toFixed(3) + ", " + sy.toFixed(3) + ");";
-        const dashAttr = isPlanned ? 'stroke-dasharray="4,2"' : '';
-
-        if (sym.svgType === "TRAIL") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 48 20"><line x1="2" y1="10" x2="46" y2="10" stroke="' + col + '" stroke-width="2" stroke-dasharray="3,3"/></svg></div>';
-        }
-        if (sym.svgType === "ROAD_LIGHT") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 50 20"><line x1="2" y1="6" x2="48" y2="6" stroke="' + col + '" stroke-width="2" ' + dashAttr + '/><line x1="2" y1="14" x2="48" y2="14" stroke="' + col + '" stroke-width="2" ' + dashAttr + '/></svg></div>';
-        }
-        if (sym.svgType === "TRACK_LIGHT") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 50 20"><line x1="2" y1="6" x2="48" y2="6" stroke="' + col + '" stroke-width="2" stroke-dasharray="3,2"/><line x1="2" y1="14" x2="48" y2="14" stroke="' + col + '" stroke-width="2" stroke-dasharray="3,2"/></svg></div>';
-        }
-        if (sym.svgType === "ROAD_HEAVY") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 52 22"><line x1="2" y1="5" x2="50" y2="5" stroke="' + col + '" stroke-width="3.5" ' + dashAttr + '/><line x1="2" y1="17" x2="50" y2="17" stroke="' + col + '" stroke-width="3.5" ' + dashAttr + '/></svg></div>';
-        }
-        if (sym.svgType === "TRACK_HEAVY") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 52 22"><line x1="2" y1="5" x2="50" y2="5" stroke="' + col + '" stroke-width="3.5" stroke-dasharray="4,2"/><line x1="2" y1="17" x2="50" y2="17" stroke="' + col + '" stroke-width="3.5" stroke-dasharray="4,2"/></svg></div>';
-        }
-        if (sym.svgType === "ONE_WAY") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 46 20"><line x1="4" y1="10" x2="34" y2="10" stroke="' + col + '" stroke-width="2.5" ' + dashAttr + '/><polygon points="34,4 44,10 34,16" fill="' + col + '"/></svg></div>';
-        }
-        if (sym.svgType === "ROAD_CLOSED") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 46 20"><line x1="2" y1="10" x2="44" y2="10" stroke="' + col + '" stroke-width="2.5" ' + dashAttr + '/><line x1="16" y1="3" x2="30" y2="17" stroke="' + col + '" stroke-width="2.5"/><line x1="30" y1="3" x2="16" y2="17" stroke="' + col + '" stroke-width="2.5"/></svg></div>';
-        }
-        if (sym.svgType === "SLOPE_1" || sym.svgType === "SLOPE_2" || sym.svgType === "SLOPE_3") {
-            const cnt = sym.svgType === "SLOPE_1" ? 1 : (sym.svgType === "SLOPE_2" ? 2 : 3);
-            let lines = "";
-            for (let i = 0; i < cnt; i++) {
-                const y = 5 + i * 6;
-                lines += '<line x1="4" y1="' + y + '" x2="36" y2="' + y + '" stroke="' + col + '" stroke-width="2" ' + dashAttr + '/>';
-            }
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 48 22">' + lines + '<polygon points="36,7 45,11 36,15" fill="' + col + '"/></svg></div>';
-        }
-        if (sym.svgType === "POWER_ON") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 46 22"><polyline points="2,11 14,11 19,3 27,19 32,11 44,11" fill="none" stroke="' + col + '" stroke-width="2.5" ' + dashAttr + '/></svg></div>';
-        }
-        if (sym.svgType === "POWER_OFF") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 34 24"><line x1="7" y1="4" x2="27" y2="20" stroke="' + col + '" stroke-width="3"/><line x1="27" y1="4" x2="7" y2="20" stroke="' + col + '" stroke-width="3"/></svg></div>';
-        }
-        if (sym.svgType === "WATER") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 24 24"><path d="M12 2 C12 2 5 10 5 15 a7 7 0 0 0 14 0 C19 10 12 2 12 2z" fill="' + (isPlanned ? "#ffffff" : col) + '" stroke="' + col + '" stroke-width="2" ' + dashAttr + '/></svg></div>';
-        }
-        if (sym.svgType === "WATER_HELI") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#ffffff" stroke="' + col + '" stroke-width="2" ' + dashAttr + '/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="bold" fill="' + col + '">H2O</text></svg></div>';
-        }
-        if (sym.svgType === "SENSITIVE" || sym.svgType === "WUI") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 28 28"><polygon points="14,2 26,24 2,24" fill="' + (isPlanned ? "#ffffff" : col) + '" stroke="' + col + '" stroke-width="2.2" ' + dashAttr + '/><text x="14" y="21" text-anchor="middle" font-size="12" font-weight="bold" fill="' + (isPlanned ? col : "#ffffff") + '">!</text></svg></div>';
-        }
-        if (sym.svgType === "HELIPAD") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11" fill="#ffffff" stroke="' + col + '" stroke-width="2.5" ' + dashAttr + '/><text x="13" y="18" text-anchor="middle" font-size="14" font-weight="bold" fill="' + col + '">H</text></svg></div>';
-        }
-        if (sym.svgType === "AIR_OBSTACLE") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 54 22"><line x1="2" y1="18" x2="52" y2="4" stroke="' + col + '" stroke-width="2.2" ' + dashAttr + '/><circle cx="27" cy="11" r="4" fill="none" stroke="' + col + '" stroke-width="2"/></svg></div>';
-        }
-        if (sym.svgType === "ARROW_MAIN" || sym.svgType === "ARROW_FAST" || sym.svgType === "ARROW_SLOW") {
-            const dash = sym.svgType === "ARROW_SLOW" ? 'stroke-dasharray="4,3"' : (sym.svgType === "ARROW_FAST" ? 'stroke-dasharray="7,2"' : dashAttr);
-            const sw = sym.svgType === "ARROW_MAIN" ? "4" : "2.5";
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 54 26"><line x1="4" y1="13" x2="40" y2="13" stroke="' + col + '" stroke-width="' + sw + '" ' + dash + '/><polygon points="40,6 52,13 40,20" fill="' + col + '"/></svg></div>';
-        }
-        if (sym.svgType === "ORIGIN") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 28 28"><polygon points="14,2 17.6,9.6 26,10.7 19.9,16.5 21.5,24.8 14,20.7 6.5,24.8 8.1,16.5 2,10.7 10.4,9.6" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5" ' + dashAttr + '/></svg></div>';
-        }
-        if (sym.svgType === "FIRE_FRONT") {
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 54 24"><path d="M2,15 C7,3 13,3 18,15 C23,27 29,27 34,15 C39,3 45,3 52,15" fill="none" stroke="' + col + '" stroke-width="3.2" stroke-dasharray="' + (isPlanned ? '3,3' : '6,2') + '"/></svg></div>';
-        }
-        if (sym.svgType === "WIND_1" || sym.svgType === "WIND_2" || sym.svgType === "WIND_3") {
-            const ticks = sym.svgType === "WIND_1" ? 1 : (sym.svgType === "WIND_2" ? 2 : 3);
-            let barbs = "";
-            for (let t = 0; t < ticks; t++) {
-                const bx = 36 + t * 6;
-                barbs += '<line x1="' + bx + '" y1="5" x2="' + (bx - 4) + '" y2="11" stroke="' + col + '" stroke-width="2"/>';
-            }
-            return '<div class="sitac-shape" style="' + transformCss + '"><svg width="' + w + '" height="' + h + '" viewBox="0 0 66 22"><line x1="12" y1="11" x2="56" y2="11" stroke="' + col + '" stroke-width="2.5" ' + dashAttr + '/><polygon points="12,6 2,11 12,16" fill="' + col + '"/>' + barbs + '</svg></div>';
-        }
-        if (sym.svgType === "FIRE_CROWN" || sym.svgType === "FIRE_SURFACE" || sym.svgType === "FIRE_GROUND") {
-            const lbl = sym.svgType === "FIRE_CROWN" ? "CHIOMA" : (sym.svgType === "FIRE_SURFACE" ? "RADENTE" : "SOTTERR");
-            return '<div class="sitac-shape" style="' + transformCss + '"><div class="sym-box" style="min-width:' + w + 'px; min-height:' + h + 'px; display:flex; align-items:center; justify-content:center; border-color:' + col + '; border-style:' + borderStyle + '; border-width:' + borderWidth + '; background:' + (isPlanned ? "#ffffff" : col) + '; color:' + (isPlanned ? col : "#ffffff") + ';">' + lbl + '</div></div>';
-        }
 
         const numStr = String(sym.id).padStart(2, "0");
         const pngSrc = (sym.id >= 1 && sym.id <= 29)
@@ -1976,9 +1894,11 @@
                 : "");
 
         if (pngSrc) {
+            const imgW = (sym.id >= 1 && sym.id <= 29) ? Math.max(w * 1.4, 56) : Math.max(w, 42);
+            const imgH = (sym.id >= 1 && sym.id <= 29) ? Math.max(h * 1.4, 34) : Math.max(h, 30);
             return '<div class="sitac-shape" style="' + transformCss + '">' +
                 '<img src="' + pngSrc + '" alt="' + escapeHtml(sym.nome) + '" ' +
-                'style="max-width:' + Math.max(w, 36) + 'px; max-height:' + Math.max(h, 28) + 'px; object-fit:contain; display:block;" ' +
+                'style="max-width:' + imgW + 'px; max-height:' + imgH + 'px; object-fit:contain; display:block;" ' +
                 'onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
                 '<div class="sym-box" style="display:none; min-width:' + w + 'px; min-height:' + h + 'px; align-items:center; justify-content:center; border-color:' + col + '; border-style:' + borderStyle + '; border-width:' + borderWidth + '; color:' + col + ';">' + escapeHtml(sym.sigla || sym.tag || sym.id) + '</div>' +
             '</div>';
@@ -2018,7 +1938,7 @@
         const scenSel = document.getElementById("scenario-select");
         const subSel = document.getElementById("subscenario-select");
         const statoSel = document.getElementById("stato-sel");
-        const searchInp = document.getElementById("search-input");
+        const searchInp = null;
         const headerEl = document.getElementById("legend-header");
         if (!listEl || !scenSel) return;
 
@@ -2069,7 +1989,7 @@
                 }
 
                 const center = map ? map.getCenter() : { lat: currentLat, lng: currentLng };
-                const noteTxt = (document.getElementById("note-input") ? document.getElementById("note-input").value.trim() : "");
+                const noteTxt = "";
                 markerCounter += 1;
                 const uid = "M-" + Date.now() + "-" + markerCounter;
                 addMarkerFromData({
@@ -2199,7 +2119,10 @@
         if (!entry) return;
         entry.stato = (entry.stato === "ACTIVE") ? "PLANNED" : "ACTIVE";
         aggiornaIconaMarker(entry);
-        registraLog("Cambiato stato #" + entry.sym.id + " in " + entry.stato);
+        if (entry.marker && entry.marker.getPopup) {
+            entry.marker.setPopupContent(getMarkerPopupHtml(entry));
+        }
+        registraLog("Cambiato stato #" + entry.sym.id + " in " + (entry.stato === "ACTIVE" ? "Effettuata" : "Prevista"));
     };
 
     window._sitacDeleteMarker = function(uid) {
@@ -2472,7 +2395,6 @@
         });
         document.getElementById("subscenario-select").addEventListener("change", renderSimboli);
         document.getElementById("stato-sel").addEventListener("change", renderSimboli);
-        document.getElementById("search-input").addEventListener("input", renderSimboli);
         document.getElementById("btn-unlock").addEventListener("click", sbloccaModifica);
         document.getElementById("btn-lock").addEventListener("click", bloccaModifica);
         document.getElementById("btn-gps-locate").addEventListener("click", richiediGps);
