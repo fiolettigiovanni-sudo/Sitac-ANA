@@ -1968,6 +1968,22 @@
             return '<div class="sitac-shape" style="' + transformCss + '"><div class="sym-box" style="min-width:' + w + 'px; min-height:' + h + 'px; display:flex; align-items:center; justify-content:center; border-color:' + col + '; border-style:' + borderStyle + '; border-width:' + borderWidth + '; background:' + (isPlanned ? "#ffffff" : col) + '; color:' + (isPlanned ? col : "#ffffff") + ';">' + lbl + '</div></div>';
         }
 
+        const numStr = String(sym.id).padStart(2, "0");
+        const pngSrc = (sym.id >= 1 && sym.id <= 29)
+            ? "./symbols/sym_" + numStr + ".png"
+            : ((sym.id >= 30 && sym.id <= 59)
+                ? "./symbols/sym_" + numStr + "_" + (stato === "ACTIVE" ? "active" : "planned") + ".png"
+                : "");
+
+        if (pngSrc) {
+            return '<div class="sitac-shape" style="' + transformCss + '">' +
+                '<img src="' + pngSrc + '" alt="' + escapeHtml(sym.nome) + '" ' +
+                'style="max-width:' + Math.max(w, 36) + 'px; max-height:' + Math.max(h, 28) + 'px; object-fit:contain; display:block;" ' +
+                'onerror="this.style.display=\'none\'; if(this.nextElementSibling) this.nextElementSibling.style.display=\'flex\';">' +
+                '<div class="sym-box" style="display:none; min-width:' + w + 'px; min-height:' + h + 'px; align-items:center; justify-content:center; border-color:' + col + '; border-style:' + borderStyle + '; border-width:' + borderWidth + '; color:' + col + ';">' + escapeHtml(sym.sigla || sym.tag || sym.id) + '</div>' +
+            '</div>';
+        }
+
         const labelTxt = escapeHtml(sym.sigla || sym.tag || sym.id);
         let bg = sym.customBg || (sym.solidBg ? col : "rgba(255,255,255,0.95)");
         let fg = sym.customText || (sym.solidBg ? "#ffffff" : col);
