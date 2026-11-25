@@ -147,6 +147,7 @@
             justify-content: center;
             padding: 4px;
             box-sizing: border-box;
+            transform-origin: center center;
         }
         .sitac-wrapper.selected-item .word-frame {
             outline: 1.5px solid #2563eb;
@@ -177,7 +178,7 @@
         .word-h-sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
         .word-h-w  { top: 50%; left: -6px; transform: translateY(-50%); cursor: ew-resize; }
 
-        .sitac-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .sitac-wrapper { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .sitac-shape { display: flex; align-items: center; justify-content: center; transform-origin: center center; }
         .sym-box { border: 2px solid #c0392b; background: rgba(255,255,255,0.94); color: #c0392b; font-size: 9px; font-weight: bold; padding: 2px 4px; text-align: center; line-height: 1.1; white-space: nowrap; }
         .sitac-caption {
@@ -412,12 +413,6 @@
 
                 <label for="subscenario-select"><b>Sottoscenario:</b></label>
                 <select id="subscenario-select"></select>
-
-                <label for="stato-sel"><b>Stato visualizzato:</b></label>
-                <select id="stato-sel">
-                    <option value="PLANNED">Previsto / Prevista</option>
-                    <option value="ACTIVE">Attivo / Effettuata</option>
-                </select>
 
                 <div id="symbol-list"></div>
             </div>
@@ -1008,7 +1003,7 @@
             operator: currentOperator || (existing ? existing.operator : "Operatore"),
             scenario: document.getElementById("scenario-select").value,
             subscenario: document.getElementById("subscenario-select").value,
-            stato: document.getElementById("stato-sel").value,
+            stato: "PLANNED",
             mapCenter: { lat: center.lat, lng: center.lng, zoom: zoom },
             markers: markersData,
             polygons: polygonsData,
@@ -1039,9 +1034,6 @@
         populateSubscenarios();
         if (ev.subscenario && document.getElementById("subscenario-select").querySelector('option[value="' + ev.subscenario + '"]')) {
             document.getElementById("subscenario-select").value = ev.subscenario;
-        }
-        if (ev.stato && document.getElementById("stato-sel").querySelector('option[value="' + ev.stato + '"]')) {
-            document.getElementById("stato-sel").value = ev.stato;
         }
         renderSimboli();
 
@@ -1767,7 +1759,8 @@
     };
 
     function getZoomScaleFactor(entry) {
-        return 1.0;
+        if (!map || !entry || typeof entry.baseZoom !== "number") return 1.0;
+        return Math.pow(2, map.getZoom() - entry.baseZoom);
     }
 
     function applyLiveTransformToMarkerDom(entry) {
@@ -1776,11 +1769,17 @@
         if (!el) return;
         const shapeEl = el.querySelector(".sitac-shape");
         if (!shapeEl) return;
-        const effScale = entry.scale || 1.0;
+        const zf = getZoomScaleFactor(entry);
+        const effScale = (entry.scale || 1.0) * zf;
         const sx = effScale * (entry.stretchX || 1.0);
         const sy = effScale * (entry.stretchY || 1.0);
         const rDeg = entry.rot || 0;
-        shapeEl.style.transform = "rotate(" + rDeg + "deg) scale(" + sx.toFixed(3) + ", " + sy.toFixed(3) + ")";
+        shapeEl.style.transform = "rotate(" + rDeg + "deg) scale(" + sx.toFixed(4) + ", " + sy.toFixed(4) + ")";
+        const capEl = el.querySelector(".sitac-caption");
+        if (capEl) {
+            capEl.style.transform = "scale(" + zf.toFixed(4) + ")";
+            capEl.style.transformOrigin = "top center";
+        }
     }
 
     window._sitacStartWordResize = function(ev, uid, dir) {
@@ -1796,6 +1795,10 @@
         if (map && map.dragging) map.dragging.disable();
         if (entry.marker.dragging) entry.marker.dragging.disable();
         const pt = (ev && ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+        const zf = getZoomScaleFactor(entry);
+        entry.stretchX = Number(((entry.stretchX || 1.0) * zf).toFixed(4));
+        entry.stretchY = Number(((entry.stretchY || 1.0) * zf).toFixed(4));
+        if (map) entry.baseZoom = map.getZoom();
         wordResizeState = {
             uid: uid,
             dir: dir || "se",
@@ -2100,13 +2103,12 @@
         const listEl = document.getElementById("symbol-list");
         const scenSel = document.getElementById("scenario-select");
         const subSel = document.getElementById("subscenario-select");
-        const statoSel = document.getElementById("stato-sel");
         const headerEl = document.getElementById("legend-header");
         if (!listEl || !scenSel) return;
 
         const scen = scenSel.value;
         const sub = subSel ? subSel.value : "ALL";
-        const stato = statoSel ? statoSel.value : "PLANNED";
+        const stato = "PLANNED";
 
         const filtered = SIMBOLI.filter(function(s) {
             if (s.scenario !== scen) return false;
@@ -2172,7 +2174,8 @@
     }
 
     function buildMarkerDivIcon(entry) {
-        const effScale = entry.scale || 1.0;
+        const zf = getZoomScaleFactor(entry);
+        const effScale = (entry.scale || 1.0) * zf;
         const isSelected = (selectedMarkerUid === entry.uid) && isEditable;
         const safeUid = String(entry.uid).replace(/[^a-zA-Z0-9_-]/g, "");
         const dirs = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -2184,7 +2187,7 @@
                 handlesHtml += '<div class="word-h word-h-' + d + '" title="Trascina per ridimensionare o stirare" onmousedown="window._sitacStartWordResize(event, \'' + safeUid + '\', \'' + d + '\')" ontouchstart="window._sitacStartWordResize(event, \'' + safeUid + '\', \'' + d + '\')" onclick="event.stopPropagation()"></div>';
             });
         }
-        const captionHtml = entry.nota ? '<div class="sitac-caption">' + escapeHtml(entry.nota) + '</div>' : '';
+        const captionHtml = entry.nota ? '<div class="sitac-caption" style="transform:scale(' + zf.toFixed(4) + ');transform-origin:top center;">' + escapeHtml(entry.nota) + '</div>' : '';
         const html =
             '<div class="sitac-wrapper' + (isSelected ? ' selected-item' : '') + '" onclick="window._sitacSelectMarker(\'' + safeUid + '\', event)" ondblclick="window._sitacOpenMarkerPopup(\'' + safeUid + '\', event)">' +
                 '<div class="word-frame">' +
@@ -2775,7 +2778,6 @@
             renderSimboli();
         });
         document.getElementById("subscenario-select").addEventListener("change", renderSimboli);
-        document.getElementById("stato-sel").addEventListener("change", renderSimboli);
         document.getElementById("btn-unlock").addEventListener("click", sbloccaModifica);
         document.getElementById("btn-lock").addEventListener("click", bloccaModifica);
         document.getElementById("btn-gps-locate").addEventListener("click", richiediGps);
@@ -2843,6 +2845,21 @@
                     }
                 }
                 handleMapClickForDraw(e.latlng);
+            });
+
+            map.on("zoom", function() {
+                Object.keys(markersRegistry).forEach(function(k) {
+                    applyLiveTransformToMarkerDom(markersRegistry[k]);
+                });
+            });
+
+            map.on("zoomend", function() {
+                Object.keys(markersRegistry).forEach(function(k) {
+                    const e = markersRegistry[k];
+                    if (e && e.marker) {
+                        aggiornaIconaMarker(e);
+                    }
+                });
             });
 
             map.on("dblclick", function(e) {
