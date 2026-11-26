@@ -144,4 +144,48 @@
         { id: 70, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#c0392b", nome: "Cancelli / varchi chiusi", tag: "X VARCO", solidBg: true, size: [54, 20] },
         { id: 71, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 28] },
         { id: 72, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1d4ed8", sigla: "POLZI", nome: "Polizia / Polizia Locale (POLZI)", tipoBox: "TERRA", size: [48, 28] },
-        { id: 73, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#0f766e", sigla: "RACCOLTA", nome
+        { id: 73, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#0f766e", sigla: "RACCOLTA", nome: "Punto di raccolta squadre", tipoBox: "TERRA", size: [62, 28] },
+        { id: 74, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#e67e22", nome: "Punto sensibile", svgType: "SENSITIVE", size: [26, 26] },
+        { id: 75, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
+
+        { id: 76, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#dc2626", nome: "IPP / Ultimo avvistamento", tag: "IPP", size: [40, 20] },
+        { id: 77, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#2563eb", nome: "Poligono settore di ricerca (perimetro area)", tag: "POLIGONO", borderStyle: "dashed", isPolygonTool: true, size: [62, 20] },
+        { id: 78, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#0891b2", nome: "Traccia / percorso battuto", tag: "TRACCIA", borderStyle: "dotted", size: [54, 20] },
+
+        { id: 79, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#0f766e", sigla: "RACCOLTA", nome: "Punto di raccolta squadre", tipoBox: "TERRA", size: [62, 28] },
+        { id: 80, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#111827", nome: "Base operativa / piazzola H", svgType: "HELIPAD", size: [26, 26] },
+        { id: 81, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#b45309", sigla: "CIN/SAF", nome: "Squadra cinofila / SAF / speleo", tipoBox: "TERRA", size: [56, 28] },
+        { id: 82, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 28] },
+
+        { id: 83, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#16a34a", nome: "Persona individuata / evacuata", tag: "INDIV", solidBg: true, size: [48, 20] },
+        { id: 84, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [46, 28] },
+        { id: 85, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [44, 28] },
+        { id: 86, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 28] },
+        { id: 87, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#16a34a", sigla: "SS", nome: "Punto sanitario / soccorso sanitario", tipoBox: "SANITARIO", size: [46, 28] },
+        { id: 88, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
+
+        { id: 89, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0284c7", sigla: "ACCOGL", nome: "Punto di accoglienza / centro assistenza", tipoBox: "TERRA", size: [56, 28] },
+        { id: 90, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0f766e", sigla: "TENDE", nome: "Area tende / ricovero temporaneo", tipoBox: "TERRA", size: [52, 28] },
+        { id: 91, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#d97706", sigla: "MENSA", nome: "Mensa", tipoBox: "TERRA", size: [50, 28] },
+        { id: 92, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0284c7", sigla: "VIVERI/H2O", nome: "Distribuzione acqua / viveri / beni", tipoBox: "TERRA", size: [66, 28] },
+
+        { id: 93, scenario: "SCENARIO_LOGISTICA", sub: "LOG_MEZZI_SANITA", col: "#16a34a", sigla: "SS", nome: "Punto sanitario / soccorso sanitario", tipoBox: "SANITARIO", size: [46, 28] },
+        { id: 94, scenario: "SCENARIO_LOGISTICA", sub: "LOG_MEZZI_SANITA", col: "#4b5563", sigla: "SOSTA/CARB", nome: "Area sosta mezzi / rifornimento", tipoBox: "TERRA", size: [68, 28] },
+
+        { id: 95, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [46, 28] },
+        { id: 96, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [44, 28] },
+        { id: 97, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 28] },
+        { id: 98, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#c0392b", nome: "Cancelli / varchi chiusi", tag: "X VARCO", solidBg: true, size: [54, 20] },
+        { id: 99, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 28] },
+        { id: 100, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1d4ed8", sigla: "POLZI", nome: "Polizia / Polizia Locale (POLZI)", tipoBox: "TERRA", size: [48, 28] }
+    ];
+
+    window.SITAC_CONFIG = {
+        SUBSCENARIOS_BY_SCENARIO: SUBSCENARIOS_BY_SCENARIO,
+        OVERLAY_CONFIGS: OVERLAY_CONFIGS,
+        SIMBOLI: SIMBOLI
+    };
+})();
+```[cite: 2]
+
+Quando ci sei, passiamo al **3/6 — `js/cloud-eventi.js`**.

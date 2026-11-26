@@ -122,4 +122,339 @@
         const currentEvId = typeof app.getCurrentEventId === "function" ? app.getCurrentEventId() : "";
 
         try {
-            const res = await fetch(SCRIPT_URL + "?t=" + Date.now
+            const res = await fetch(SCRIPT_URL + "?t=" + Date.now());
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const data = await res.json();
+            cloudState = {
+                events: Array.isArray(data.events) ? data.events : [],
+                entries: Array.isArray(data.entries) ? data.entries : [],
+                history: Array.isArray(data.history) ? data.history : []
+            };
+            const mappedEvents = cloudState.events
+                .filter(function(ev) { return String(ev.status || "") !== "Eliminato"; })
+                .map(cloudRowToMapEvent)
+                .reverse();
+
+            safeWriteStorage(mappedEvents);
+            const targetId = preferredEventId || currentEvId;
+            refreshEventDropdown(targetId);
+
+            if (statusEl) {
+                statusEl.innerHTML = "Online: <b>" + mappedEvents.length + "</b> eventi (" + new Date().toLocaleTimeString("it-IT") + ")";
+            }
+
+            if (targetId) {
+                const found = mappedEvents.find(function(e) { return e.id === targetId; });
+                if (found && typeof app.loadEventIntoMap === "function") {
+                    app.loadEventIntoMap(found);
+                    return;
+                }
+            }
+            if (typeof app.aggiornaMarkerOperatoriRemoti === "function") {
+                app.aggiornaMarkerOperatoriRemoti();
+            }
+            if (autoLoadFirst && mappedEvents.length > 0 && !(new URLSearchParams(window.location.search || "").get("gps"))) {
+                if (typeof app.loadEventIntoMap === "function") {
+                    app.loadEventIntoMap(mappedEvents[0]);
+                }
+            }
+        } catch (err) {
+            if (statusEl) {
+                statusEl.innerHTML = "<span style='color:#b91c1c;'>Offline / cache locale (" + escapeHtml(err.message) + ")</span>";
+            }
+            const localCached = safeReadStorage();
+            refreshEventDropdown(currentEvId);
+            if (autoLoadFirst && localCached.length > 0 && !currentEvId) {
+                if (typeof app.loadEventIntoMap === "function") {
+                    app.loadEventIntoMap(localCached[0]);
+                }
+            }
+        }
+    }
+
+    function renderCloudCollaboration(eventId) {
+        const app = getApp();
+        const isEditable = typeof app.getIsEditable === "function" ? app.getIsEditable() : false;
+        const box = document.getElementById("cloud-collab-box");
+        const emptyEl = document.getElementById("cloud-collab-empty");
+        const entriesBox = document.getElementById("cloud-entries-list");
+        const historyBox = document.getElementById("cloud-history-list");
+        if (!box || !entriesBox || !historyBox) return;
+
+        if (!eventId) {
+            box.style.display = "none";
+            if (emptyEl) emptyEl.style.display = "block";
+            return;
+        }
+        box.style.display = "block";
+        if (emptyEl) emptyEl.style.display = "none";
+
+        const evRow = (cloudState.events || []).find(function(e) { return e.event_id === eventId; });
+        const evEntries = (cloudState.entries || []).filter(function(en) {
+            return en.event_id === eventId && String(en.note || "").indexOf("GPS_LIVE|") !== 0;
+        });
+        const evHistory = (cloudState.history || []).filter(function(h) { return h.event_id === eventId; });
+
+        if (evEntries.length === 0) {
+            entriesBox.innerHTML = "<div class='event-meta'>Nessun intervento registrato.</div>";
+        } else {
+            entriesBox.innerHTML = evEntries.map(function(en) {
+                const safeEntryId = String(en.entry_id || "").replace(/'/g, "\\'");
+                const editBtn = isEditable
+                    ? ' <button type="button" class="small-btn" style="padding:1px 5px;font-size:10px;background:#475569;color:#fff;" onclick="window._sitacEditCloudEntry(\'' + safeEntryId + '\')">Modifica</button>'
+                    : '';
+                return '<div class="cloud-entry-card">' +
+                    '<b>' + escapeHtml(en.author_name || en.author_email || "Operatore") + '</b> (' + escapeHtml(en.role || "") + '): ' +
+                    escapeHtml(en.note || "") + editBtn +
+                '</div>';
+            }).join("");
+        }
+
+        if (evHistory.length === 0) {
+            historyBox.innerHTML = "<div class='event-meta'>Nessuna modifica registrata.</div>";
+        } else {
+            historyBox.innerHTML = evHistory.map(function(h) {
+                const origEntry = evEntries.find(function(e) { return e.entry_id === h.target_id; });
+                const origAuthorEmail = h.target_type === "evento"
+                    ? (evRow ? evRow.author_email : "")
+                    : (origEntry ? origEntry.author_email : "");
+                const isForeign = origAuthorEmail && h.editor_email && (origAuthorEmail.toLowerCase() !== h.editor_email.toLowerCase());
+                const oldShort = parseCloudSummary(h.old_value).text || "(aggiornamento mappa/dati)";
+                const newShort = parseCloudSummary(h.new_value).text || "(aggiornamento mappa/dati)";
+                return '<div class="' + (isForeign ? 'cloud-mod-alert' : 'cloud-entry-card') + '">' +
+                    (isForeign ? '<b>[MODIFICA SU CONTENUTO ALTRUI]</b> ' : '') +
+                    '<b>' + escapeHtml(h.editor_name || h.editor_email || "Operatore") + '</b> su <i>' + escapeHtml(h.target_type || "") + '.' + escapeHtml(h.field || "") + '</i>: ' +
+                    '"' + escapeHtml(oldShort) + '" &rarr; "<b>' + escapeHtml(newShort) + '</b>"' +
+                '</div>';
+            }).join("");
+        }
+    }
+
+    window._sitacEditCloudEntry = function(entryId) {
+        const app = getApp();
+        if (!app.getIsEditable || !app.getIsEditable()) return alert("Sbloccare con password per modificare.");
+        const en = (cloudState.entries || []).find(function(item) { return item.entry_id === entryId; });
+        if (!en) return;
+        const nextNote = prompt("Modifica testo intervento:", en.note || "");
+        if (nextNote === null || nextNote.trim() === "" || nextNote.trim() === (en.note || "")) return;
+        const me = getCurrentUserPayload();
+        if (en.author_email && me.email && en.author_email.toLowerCase() !== me.email.toLowerCase()) {
+            if (!confirm("Sta modificando un intervento scritto da " + (en.author_name || en.author_email) + ". La modifica restera visibile nello storico. Continuare?")) {
+                return;
+            }
+        }
+        postToCloud({
+            action: "edit_field",
+            event_id: app.getCurrentEventId(),
+            target_type: "intervento",
+            target_id: entryId,
+            field: "note",
+            new_value: nextNote.trim()
+        });
+        app.registraLog("Modificato intervento di " + (en.author_name || en.author_email));
+    };
+
+    function handleAddCloudEntry() {
+        const app = getApp();
+        if (!app.getOperatorModeActive() && !app.sbloccaModifica()) return;
+        const currentEvId = app.getCurrentEventId();
+        const currentEvPwd = app.getCurrentEventPassword();
+        const unlockedMap = app.getUnlockedEventIds();
+        if (currentEvId && currentEvPwd && !unlockedMap[currentEvId]) {
+            if (!app.promptUnlockCurrentEvent()) return;
+        }
+        if (!currentEvId || String(currentEvId).indexOf("EVT-") !== 0) {
+            return alert("Salvi prima l'evento online (Salva Online) per poter aggiungere interventi.");
+        }
+        const inp = document.getElementById("cloud-entry-input");
+        const txt = inp ? inp.value.trim() : "";
+        if (!txt) return alert("Inserire il testo dell'intervento.");
+        postToCloud({
+            action: "add_entry",
+            event_id: currentEvId,
+            note: txt,
+            role: getCurrentUserPayload().role
+        });
+        inp.value = "";
+        app.registraLog("Inviato intervento online: " + txt);
+    }
+
+    function refreshEventDropdown(selectedId) {
+        const sel = document.getElementById("event-select");
+        if (!sel) return;
+        const events = safeReadStorage();
+        sel.innerHTML = '<option value="">-- Seleziona un evento online (' + events.length + ') --</option>';
+        events.forEach(function(ev) {
+            const opt = document.createElement("option");
+            opt.value = ev.id;
+            opt.textContent = ev.title + (ev.operator ? " - " + ev.operator : "");
+            if (selectedId && ev.id === selectedId) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+
+    function handleNewEvent() {
+        const app = getApp();
+        if (!app.getOperatorModeActive() && !app.sbloccaModifica()) return;
+        const titleEl = document.getElementById("event-title-input");
+        const pwdEl = document.getElementById("event-pwd-input");
+        const title = titleEl.value.trim() || ("Evento " + new Date().toLocaleTimeString("it-IT"));
+        app.clearMapElements();
+        app.setCurrentEventState("", "");
+        if (pwdEl) pwdEl.value = "";
+        titleEl.value = title;
+        app.applyEditStateToUi();
+        document.getElementById("event-active-info").innerHTML = "Nuovo evento in corso: <b>" + escapeHtml(title) + "</b> (scelga la password evento e premi Salva Online)";
+        renderCloudCollaboration("");
+        app.registraLog("Preparato nuovo evento: " + title);
+    }
+
+    function handleSaveEvent() {
+        const app = getApp();
+        if (!app.getOperatorModeActive() && !app.sbloccaModifica()) return;
+        const pwdEl = document.getElementById("event-pwd-input");
+        const currentEvId = app.getCurrentEventId();
+        const currentEvPwd = app.getCurrentEventPassword();
+        const unlockedMap = app.getUnlockedEventIds();
+
+        if (!currentEvId && pwdEl && !pwdEl.value.trim()) {
+            const chosen = prompt("Scelga una password per proteggere le modifiche di questo nuovo evento (o lasci vuoto per evento aperto):");
+            if (chosen === null) return;
+            pwdEl.value = chosen;
+        }
+        if (currentEvId && currentEvPwd && !unlockedMap[currentEvId]) {
+            if (!app.promptUnlockCurrentEvent()) return;
+        }
+        const snap = app.serializeCurrentState();
+        app.setCurrentEventState(currentEvId, snap.editPassword || "");
+        const isTest = document.getElementById("event-is-test").checked;
+        const summaryNote = "Simboli: " + snap.markers.length + ", Forme: " + snap.polygons.length + ", Scritte: " + snap.textLabels.length + " (" + snap.savedAt + ")";
+        const packedSummary = buildCloudSummary(summaryNote, snap);
+        const me = getCurrentUserPayload();
+
+        const existingCloud = (cloudState.events || []).find(function(e) { return e.event_id === currentEvId; });
+        if (existingCloud) {
+            if (existingCloud.author_email && me.email && existingCloud.author_email.toLowerCase() !== me.email.toLowerCase()) {
+                if (!confirm("Questo evento e stato aperto da " + (existingCloud.author_name || existingCloud.author_email) + ". Le tue modifiche alla mappa verranno registrate nella cronologia. Continuare?")) {
+                    return;
+                }
+            }
+            postToCloud({
+                action: "edit_field",
+                event_id: currentEvId,
+                target_type: "evento",
+                target_id: currentEvId,
+                field: "summary",
+                new_value: packedSummary
+            });
+            app.registraLog("Aggiornato evento online '" + snap.title + "'");
+        } else {
+            postToCloud({
+                action: "create_event",
+                title: snap.title,
+                summary: packedSummary,
+                is_test: isTest,
+                role: me.role,
+                status: "Aperto"
+            });
+            app.registraLog("Creato nuovo evento online '" + snap.title + "'");
+        }
+    }
+
+    function handleDeleteEvent() {
+        const app = getApp();
+        if (!app.getOperatorModeActive() && !app.sbloccaModifica()) return;
+        const currentEvId = app.getCurrentEventId();
+        const currentEvPwd = app.getCurrentEventPassword();
+        const unlockedMap = app.getUnlockedEventIds();
+
+        if (currentEvId && currentEvPwd && !unlockedMap[currentEvId]) {
+            if (!app.promptUnlockCurrentEvent()) return;
+        }
+        const targetId = currentEvId || document.getElementById("event-select").value;
+        if (!targetId) return alert("Selezionare un evento da chiudere/rimuovere.");
+        if (!confirm("Contrassegnare questo evento come Eliminato nell'archivio online?")) return;
+        postToCloud({
+            action: "edit_field",
+            event_id: targetId,
+            target_type: "evento",
+            target_id: targetId,
+            field: "status",
+            new_value: "Eliminato"
+        });
+        if (currentEvId === targetId) {
+            app.setCurrentEventState("", "");
+            document.getElementById("event-title-input").value = "";
+            document.getElementById("event-active-info").textContent = "Evento rimosso dall'elenco attivo.";
+            renderCloudCollaboration("");
+        }
+        app.registraLog("Contrassegnato evento come Eliminato online.");
+    }
+
+    function handleExportJson() {
+        const app = getApp();
+        const snap = app.serializeCurrentState();
+        const blob = new Blob([JSON.stringify(snap, null, 2)], { type: "application/json;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const safeName = (snap.title || "evento_sitac").toLowerCase().replace(/[^a-z0-9_-]+/g, "_");
+        a.href = url;
+        a.download = safeName + ".json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        app.registraLog("Esportato evento in JSON: " + a.download);
+    }
+
+    function handleImportJsonFile(e) {
+        const app = getApp();
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const parsed = JSON.parse(evt.target.result);
+                if (!parsed || !Array.isArray(parsed.markers)) {
+                    return alert("File JSON non valido per SITAC.");
+                }
+                parsed.id = "";
+                app.loadEventIntoMap(parsed);
+                app.registraLog("Importato evento da file: " + (parsed.title || file.name) + " (premi Salva Online per condividerlo)");
+            } catch (err) {
+                alert("Errore lettura JSON: " + err.message);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+    }
+
+    function getCloudState() {
+        return cloudState;
+    }
+
+    window.SITAC_CLOUD = {
+        SCRIPT_URL: SCRIPT_URL,
+        STORAGE_KEY: STORAGE_KEY,
+        safeReadStorage: safeReadStorage,
+        safeWriteStorage: safeWriteStorage,
+        getCurrentUserPayload: getCurrentUserPayload,
+        parseCloudSummary: parseCloudSummary,
+        buildCloudSummary: buildCloudSummary,
+        cloudRowToMapEvent: cloudRowToMapEvent,
+        postToCloud: postToCloud,
+        syncFromCloud: syncFromCloud,
+        renderCloudCollaboration: renderCloudCollaboration,
+        handleAddCloudEntry: handleAddCloudEntry,
+        refreshEventDropdown: refreshEventDropdown,
+        handleNewEvent: handleNewEvent,
+        handleSaveEvent: handleSaveEvent,
+        handleDeleteEvent: handleDeleteEvent,
+        handleExportJson: handleExportJson,
+        handleImportJsonFile: handleImportJsonFile,
+        getCloudState: getCloudState
+    };
+})();
+```[cite: 2]
+
+Quando ci sei, procediamo con il **4/6 — `js/gps-meteo.js`**.
