@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SITAC — Mappe Operative | Mappa Operativa</title>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#14281d" />
+    <link rel="icon" type="image/png" href="assets/logo-192.png" />
+    <link rel="apple-touch-icon" href="assets/logo-192.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="css/mappa.css" />
+</head>
+<body>
+
+<div id="entry-gate">
+    <div class="gate-card">
+        <h2>SITAC &bull; MAPPE OPERATIVE</h2>
+        <div class="gate-sub">CARTOGRAFIA TATTICA MULTI-SCENARIO &mdash; ARCHIVIO EVENTI ONLINE</div>
+        <p>
+            La <b>sola lettura</b> è libera per tutti. Chi crea un nuovo evento sceglie la <b>propria password dedicata a quell'evento</b>; per modificare un evento protetto serve la password di quell'evento.
+        </p>
+        <div class="gate-field">
+            <label for="gate-name">Nome e Cognome / Qualifica (per chi crea o modifica)</label>
+            <input type="text" id="gate-name" placeholder="Nome e Cognome...">
+        </div>
+        <div class="gate-field">
+            <label for="gate-email">Email Google (per tracciamento autori e modifiche)</label>
+            <input type="text" id="gate-email" placeholder="nome@gmail.com">
+        </div>
+        <div class="gate-field">
+            <label for="gate-role">Ruolo operativo</label>
+            <input type="text" id="gate-role" value="DOS / Responsabile" placeholder="DOS / Responsabile / Caposquadra...">
+        </div>
+        <div class="gate-actions">
+            <button type="button" class="gate-btn-primary" id="btn-gate-edit">Entra come Operatore (Crea / Modifica Eventi)</button>
+            <button type="button" class="gate-btn-secondary" id="btn-gate-readonly">Entra in Sola Lettura Libera</button>
+        </div>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<div id="presentation-banner">
+    <div class="title-row">
+        <span>SITAC &bull; Mappe Operative</span>
+        <button type="button" id="btn-toggle-intro">Riduci</button>
+    </div>
+    <div class="sub-row">SUPPORTO CARTOGRAFICO MULTI-SCENARIO</div>
+    <div id="intro-body">
+        <div style="margin-top:4px;">
+            Supporto cartografico e tattico per volontari e coordinamento su <b>AIB</b>, <b>Rischio idrogeologico/idraulico</b>, <b>Ricerca e soccorso</b> e <b>Logistica</b>. Consultazione libera; modifica riservata agli operatori abilitati.
+        </div>
+        <div class="banner-notes-box">
+            <div class="logo-slot">SITAC<br>MAPPE OP.</div>
+            <div class="notes-area">
+                <div><b>Note operative e formazione:</b> spazio dedicato a comunicazioni di squadra, canali radio, riferimenti addestrativi e avvisi di emergenza.</div>
+                <div style="margin-top:3px; color:#fde68a;">Strumento di supporto e simulazione/coordinamento: non sostituisce i canali ufficiali di comando e allertamento.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="meteo-widget">
+    <div class="mw-head">
+        <span>Meteo, Vento e Evoluzione</span>
+        <div style="display:flex; gap:4px; align-items:center;">
+            <button type="button" class="mw-btn" id="btn-meteo">Aggiorna da GPS/Mappa</button>
+            <button type="button" class="mw-btn-sec" id="btn-toggle-meteo">Riduci</button>
+        </div>
+    </div>
+    <div id="meteo-body">
+        <div id="meteo-info" style="color:#cbd5e1;">Nessun dato. Clicchi su "Aggiorna da GPS/Mappa".</div>
+        <div class="mw-cols">
+            <div class="mw-col-box">
+                <div class="mw-col-title">Attuali</div>
+                <div id="meteo-current-col">
+                    <div class="mw-row"><span>Vento:</span><b>--</b></div>
+                    <div class="mw-row"><span>Raffiche:</span><b>--</b></div>
+                    <div class="mw-row"><span>Direzione:</span><b>--</b></div>
+                    <div class="mw-row"><span>Temperatura:</span><b>--</b></div>
+                    <div class="mw-row"><span>Precipitazioni:</span><b>--</b></div>
+                </div>
+            </div>
+            <div class="mw-col-box">
+                <div class="mw-col-title">Evoluzione futura</div>
+                <div id="meteo-future-col">
+                    <div style="color:#94a3b8; font-size:10px;">In attesa di aggiornamento...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="toolbar">
+    <div class="toolbar-top-bar">
+        <h3 id="toolbar-main-title">SITAC — MAPPE OPERATIVE</h3>
+        <button type="button" id="btn-toggle-toolbar" title="Riduci o espandi la barra laterale">Riduci Barra</button>
+    </div>
+
+    <div id="toolbar-content">
+        <div id="diag-banner">Caricamento...</div>
+
+        <details class="acc-section" id="acc-auth">
+            <summary><span id="status-lock">Stato: <b>Sola Lettura Libera</b></span></summary>
+            <div class="acc-body">
+                <div id="login-area">
+                    <input type="text" id="op-name-input" placeholder="Nome / Qualifica operatore...">
+                    <input type="text" id="op-email-input" placeholder="Email Google (es. nome@gmail.com)...">
+                    <input type="text" id="op-role-input" value="DOS / Responsabile" placeholder="Ruolo (DOS, Caposquadra...)">
+                    <button type="button" class="action-btn" id="btn-unlock" style="background:#27ae60; margin-bottom:0;">Abilita Modalità Operatore</button>
+                </div>
+                <div id="logout-area" style="display:none;">
+                    <div id="op-active-label" style="margin-bottom:2px; font-weight:bold;"></div>
+                    <div id="op-meta-label" style="font-size:10px; color:#475569; margin-bottom:2px;"></div>
+                    <div id="event-lock-badge" style="font-size:10px; font-weight:bold; color:#b45309; margin-bottom:4px;"></div>
+                    <button type="button" class="action-btn" id="btn-unlock-event" style="background:#0369a1; display:none;">Inserisci Password Evento per Modificare</button>
+                    <button type="button" class="action-btn" id="btn-lock" style="background:#7f8c8d; margin-bottom:0;">Torna a Sola Lettura Libera</button>
+                </div>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-events">
+            <summary><span>Eventi Online (Condivisi)</span></summary>
+            <div class="acc-body">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:4px;">
+                    <span id="cloud-sync-status" class="event-meta">Connessione all'archivio online...</span>
+                    <button type="button" class="small-btn" id="btn-cloud-sync" style="background:#0369a1; color:#fff;">Aggiorna</button>
+                </div>
+                <select id="event-select">
+                    <option value="">-- Seleziona un evento online --</option>
+                </select>
+                <div id="event-active-info" class="event-meta">Nessun evento caricato.</div>
+                <div id="operator-event-bar" style="margin-top:5px; display:none;">
+                    <button type="button" class="action-btn" id="btn-event-new" style="background:#0369a1; margin-bottom:5px;">+ Crea Nuovo Evento Pulito</button>
+                </div>
+                <div class="edit-only-box locked" id="event-edit-controls" style="margin-top:4px;">
+                    <input type="text" id="event-title-input" placeholder="Titolo evento (es. Esercitazione Corteno)..." style="margin-bottom:4px;">
+                    <input type="password" id="event-pwd-input" placeholder="Password dedicata a questo evento..." style="margin-bottom:4px;">
+                    <label style="display:flex; align-items:center; gap:5px; font-size:11px; margin-bottom:4px; cursor:pointer;">
+                        <input type="checkbox" id="event-is-test" checked style="width:auto; margin:0;">
+                        Etichetta [TEST / PROVA]
+                    </label>
+                    <div style="display:flex; gap:4px;">
+                        <button type="button" class="small-btn" id="btn-event-save" style="flex:1; background:#15803d; color:#fff;">Salva Online</button>
+                        <button type="button" class="small-btn" id="btn-event-del" style="background:#b91c1c; color:#fff;">Chiudi / Rimuovi</button>
+                    </div>
+                </div>
+                <div style="display:flex; gap:4px; margin-top:5px;">
+                    <button type="button" class="small-btn" id="btn-event-export" style="flex:1; background:#334155; color:#fff;">Esporta JSON</button>
+                    <button type="button" class="small-btn" id="btn-event-import" style="flex:1; background:#475569; color:#fff;">Importa JSON</button>
+                    <input type="file" id="event-import-file" accept=".json,application/json" style="display:none;">
+                </div>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-gps">
+            <summary><span>Posizione GPS / Invito Operatori</span></summary>
+            <div class="acc-body">
+                <div id="gps-status" class="gps-share-box">GPS non ancora rilevato.</div>
+                <div id="live-gps-summary" class="event-meta">Operatori in movimento: nessuno rilevato.</div>
+                <div style="display:flex; gap:4px; margin-top:4px;">
+                    <button type="button" class="small-btn" id="btn-gps-locate" style="flex:1; background:#0369a1; color:#fff;">Aggiorna GPS</button>
+                    <button type="button" class="small-btn" id="btn-gps-share" style="flex:1; background:#15803d; color:#fff;">Copia Link Posizione</button>
+                </div>
+                <div style="display:flex; gap:4px; margin-top:4px;">
+                    <button type="button" class="small-btn" id="btn-invite-event" style="flex:1; background:#7c3aed; color:#fff;">Copia Link Invito Evento</button>
+                    <button type="button" class="small-btn" id="btn-gps-live-toggle" style="flex:1; background:#0f766e; color:#fff;">Avvia GPS Live</button>
+                </div>
+                <div id="gps-link-box" class="gps-coords-line" style="display:none;"></div>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-wms">
+            <summary><span>Mappe Sovrapponibili (Geoportale / GeoJSON)</span></summary>
+            <div class="acc-body">
+                <div id="wms-layers-list"></div>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-symbols" open>
+            <summary><span id="legend-header">Scenario e Legenda Simboli</span></summary>
+            <div class="acc-body">
+                <label for="scenario-select"><b>Scenario:</b></label>
+                <select id="scenario-select">
+                    <option value="SCENARIO_AIB">Scenario AIB - Incendi Boschivi</option>
+                    <option value="SCENARIO_IDRO">Scenario Idrogeologico / Frane e Alluvioni</option>
+                    <option value="SCENARIO_RICERCA">Scenario Ricerca e Soccorso</option>
+                    <option value="SCENARIO_LOGISTICA">Scenario Logistica e Assistenza Popolazione</option>
+                </select>
+
+                <label for="subscenario-select"><b>Sottoscenario:</b></label>
+                <select id="subscenario-select"></select>
+
+                <div id="symbol-list"></div>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-draw">
+            <summary><span>Disegno Libero (Linee, Forme, Scritte)</span></summary>
+            <div class="acc-body edit-only-box locked" id="draw-tools-box">
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <div style="flex:1;">
+                        <label style="font-size:11px; font-weight:bold;">Colore tratto / testo:</label>
+                        <input type="color" id="draw-color-input" value="#dc2626">
+                    </div>
+                    <div style="flex:2;">
+                        <label style="font-size:11px; font-weight:bold;">Etichetta / Scritta:</label>
+                        <input type="text" id="draw-label-input" placeholder="Testo da inserire sulla mappa...">
+                    </div>
+                </div>
+                <div class="draw-grid">
+                    <button type="button" class="draw-tool-btn" id="btn-draw-line">&#9585; Linea</button>
+                    <button type="button" class="draw-tool-btn" id="btn-draw-rect">&#9633; Quadrato / Rettangolo</button>
+                    <button type="button" class="draw-tool-btn" id="btn-draw-circle">&#9711; Cerchio</button>
+                    <button type="button" class="draw-tool-btn" id="btn-draw-triangle">&#9651; Triangolo</button>
+                    <button type="button" class="draw-tool-btn" id="btn-draw-text" style="grid-column: span 2; background:#eff6ff; border-color:#2563eb; color:#1d4ed8;">&#9998; Inserisci Scritta sulla Mappa</button>
+                </div>
+                <div id="draw-hint" class="event-meta" style="margin-top:5px;">Seleziona uno strumento sopra per disegnare sulla mappa.</div>
+                <button type="button" class="small-btn" id="btn-draw-cancel" style="display:none; width:100%; margin-top:4px; background:#b91c1c; color:#fff;">Annulla Disegno in Corso</button>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-log">
+            <summary><span>Registro Azioni</span></summary>
+            <div class="acc-body">
+                <div id="log-container">Nessuna modifica registrata.</div>
+            </div>
+        </details>
+
+        <details class="acc-section" id="acc-interventi">
+            <summary><span>Interventi Operativi sull'Evento</span></summary>
+            <div class="acc-body">
+                <div id="cloud-collab-box" style="display:none;">
+                    <b>Interventi Operativi Registrati:</b>
+                    <div id="cloud-entries-list" style="max-height:120px; overflow-y:auto; margin-top:3px;"></div>
+                    <div class="edit-only-box locked" id="cloud-entry-add-box" style="margin-top:4px;">
+                        <input type="text" id="cloud-entry-input" placeholder="Aggiungi intervento / aggiornamento squadra...">
+                        <button type="button" class="small-btn" id="btn-cloud-add-entry" style="width:100%; background:#0f766e; color:#fff;">Registra Intervento Online</button>
+                    </div>
+                    <b style="display:block; margin-top:6px;">Cronologia Modifiche Altrui:</b>
+                    <div id="cloud-history-list" style="max-height:100px; overflow-y:auto; margin-top:2px;"></div>
+                </div>
+                <div id="cloud-collab-empty" class="event-meta">Seleziona o salva un evento online per visualizzare gli interventi operativi.</div>
+            </div>
+        </details>
+
+        <div class="legal-note">
+            <b>Nota informativa e d'uso:</b> applicazione cartografica di supporto operativo e formativo (SITAC — Mappe Operative). Non sostituisce i sistemi ufficiali di allertamento e comando.
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" crossorigin="anonymous"></script>
+<script src="js/config-simboli.js"></script>
+<script src="js/cloud-eventi.js"></script>
+<script src="js/gps-meteo.js"></script>
+<script src="js/disegno-mappa.js"></script>
+<script>
+(function() {
+    let operatorModeActive = false;
+    let isEditable = false;
+    let currentEventPassword = "";
+    const unlockedEventIds = {};
+    let currentOperator = "";
+    let currentOperatorEmail = "";
+    let currentOperatorRole = "DOS / Responsabile";
+    let currentLat = "46.16";
+    let currentLng = "10.33";
+    let hasGpsFix = false;
+    let map = null;
+    let gpsMarker = null;
+    let sharedGpsMarker = null;
+    let markerCounter = 0;
+    let polyCounter = 0;
+    let textLabelCounter = 0;
+    let currentEventId = "";
+    const markersRegistry = {};
+    const polygonsRegistry = {};
+    const textLabelsRegistry = {};
+    const overlayRegistry = {};
+    const logsRegistry = [];
+
+    function getCloud() {
+        return window.SITAC_CLOUD || {};
+    }
+
+    function getGpsMeteo() {
+        return window.SITAC_GPS_METEO || {};
+    }
+
+    function getDisegno() {
+        return window.SITAC_DISEGNO || {};
+    }
+
+    function setDiag(msg, isError) {
+        const el = document.getElementById("diag-banner");
+        if (!el) return;
+        el.textContent = msg;
+        el.style.background = isError ? "#fee2e2" : "#dcfce7";
+        el.style.color = isError ? "#991b1b" : "#166534";
+        el.style.borderColor = isError ? "#f87171" : "#4ade80";
+    }
+
+    function escapeHtml(str) {
+        return String(str || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function serializeCurrentState(titleOverride) {
+        const cloud = getCloud();
+        const center = map ? map.getCenter() : { lat: parseFloat(currentLat), lng: parseFloat(currentLng) };
+        const zoom = map ? map.getZoom() : 13;
+        const titleInput = document.getElementById("event-title-input");
+        const typedTitle = (titleOverride || (titleInput ? titleInput.value.trim() : "")).trim();
+        const storedEvents = typeof cloud.safeReadStorage === "function" ? cloud.safeReadStorage() : [];
+        const existing = storedEvents.find(function(ev) { return ev.id === currentEventId; });
+        const finalTitle = typedTitle || (existing ? existing.title : ("Evento " + new Date().toLocaleDateString("it-IT")));
+
+        const markersData = Object.keys(markersRegistry).map(function(k) {
+            const e = markersRegistry[k];
+            const ll = e.marker ? e.marker.getLatLng() : center;
+            return {
+                uid: e.uid,
+                symId: e.sym.id,
+                stato: e.stato,
+                nota: e.nota || "",
+                noteInterne: e.noteInterne || "",
+                autore: e.autore,
+                ora: e.ora,
+                scale: e.scale,
+                stretchX: e.stretchX,
+                stretchY: e.stretchY,
+                rot: e.rot,
+                baseZoom: e.baseZoom,
+                lat: ll.lat,
+                lng: ll.lng
+            };
+        });
+
+        const polygonsData = Object.keys(polygonsRegistry).map(function(k) {
+            const p = polygonsRegistry[k];
+            let pts = p.points || [];
+            if (p.shapeType === "CIRCLE" && p.layer && p.layer.getLatLng) {
+                const cLl = p.layer.getLatLng();
+                pts = [[cLl.lat, cLl.lng]];
+            } else if (p.layer && p.layer.getLatLngs) {
+                const raw = p.layer.getLatLngs();
+                const arr = Array.isArray(raw[0]) ? raw[0] : raw;
+                pts = (arr || []).map(function(pt) {
+                    return Array.isArray(pt) ? pt : [pt.lat, pt.lng];
+                });
+            }
+            return {
+                uid: p.uid,
+                num: p.num,
+                shapeType: p.shapeType || "POLYGON",
+                radius: p.radius || 0,
+                points: pts,
+                color: p.color,
+                nota: p.nota,
+                scenarioLabel: p.scenarioLabel,
+                autore: p.autore,
+                ora: p.ora
+            };
+        });
+
+        const textLabelsData = Object.keys(textLabelsRegistry).map(function(k) {
+            const t = textLabelsRegistry[k];
+            const ll = t.marker ? t.marker.getLatLng() : center;
+            return {
+                uid: t.uid,
+                text: t.text,
+                color: t.color,
+                lat: ll.lat,
+                lng: ll.lng,
+                autore: t.autore,
+                ora: t.ora
+            };
+        });
+
+        const pwdInputEl = document.getElementById("event-pwd-input");
+        const typedPwd = pwdInputEl ? pwdInputEl.value : "";
+        const finalPwd = typedPwd || currentEventPassword || (existing ? (existing.editPassword || "") : "");
+        return {
+            id: currentEventId || "",
+            title: finalTitle,
+            editPassword: finalPwd,
+            savedAt: new Date().toLocaleString("it-IT"),
+            operator: currentOperator || (existing ? existing.operator : "Operatore"),
+            scenario: document.getElementById("scenario-select").value,
+            subscenario: document.getElementById("subscenario-select").value,
+            stato: "PLANNED",
+            mapCenter: { lat: center.lat, lng: center.lng, zoom: zoom },
+            markers: markersData,
+            polygons: polygonsData,
+            textLabels: textLabelsData,
+            logs: logsRegistry.slice()
+        };
+    }
+
+    function loadEventIntoMap(ev) {
+        if (!ev) return;
+        const cloud = getCloud();
+        const disegno = getDisegno();
+        clearMapElements();
+        currentEventId = ev.id;
+        currentEventPassword = ev.editPassword || "";
+        document.getElementById("event-title-input").value = ev.title || "";
+        document.getElementById("event-pwd-input").value = "";
+        const lockInfo = currentEventPassword
+            ? (unlockedEventIds[ev.id] ? " (sbloccato per modifica)" : " (protetto da password evento)")
+            : " (senza password evento)";
+        document.getElementById("event-active-info").innerHTML =
+            "Evento: <b>" + escapeHtml(ev.title) + "</b>" + escapeHtml(lockInfo) +
+            "<br>Aperto da: " + escapeHtml(ev.operator || "") +
+            (ev.authorEmail ? " (" + escapeHtml(ev.authorEmail) + ")" : "") +
+            (ev.role ? " &bull; " + escapeHtml(ev.role) : "");
+
+        if (ev.scenario && document.getElementById("scenario-select").querySelector('option[value="' + ev.scenario + '"]')) {
+            document.getElementById("scenario-select").value = ev.scenario;
+        }
+        if (typeof disegno.populateSubscenarios === "function") disegno.populateSubscenarios();
+        if (ev.subscenario && document.getElementById("subscenario-select").querySelector('option[value="' + ev.subscenario + '"]')) {
+            document.getElementById("subscenario-select").value = ev.subscenario;
+        }
+        if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
+
+        if (map && ev.mapCenter) {
+            map.setView([ev.mapCenter.lat, ev.mapCenter.lng], ev.mapCenter.zoom || 13);
+        }
+
+        let maxM = 0;
+        (ev.markers || []).forEach(function(m) {
+            const n = parseInt(String(m.uid || "").replace(/\D+/g, ""), 10);
+            if (!isNaN(n) && n > maxM) maxM = n;
+            if (typeof disegno.addMarkerFromData === "function") {
+                disegno.addMarkerFromData({
+                    uid: m.uid,
+                    symId: m.symId,
+                    stato: m.stato,
+                    nota: m.nota || "",
+                    noteInterne: m.noteInterne || "",
+                    autore: m.autore,
+                    ora: m.ora,
+                    scale: m.scale,
+                    stretchX: m.stretchX,
+                    stretchY: m.stretchY,
+                    rot: m.rot,
+                    baseZoom: m.baseZoom,
+                    latlng: [m.lat, m.lng],
+                    openPopup: false
+                });
+            }
+        });
+        markerCounter = maxM;
+
+        let maxP = 0;
+        (ev.polygons || []).forEach(function(p) {
+            const pNum = parseInt(p.num, 10) || parseInt(String(p.uid || "").replace(/\D+/g, ""), 10) || 0;
+            if (pNum > maxP) maxP = pNum;
+            if (typeof disegno.addShapeToMap === "function") {
+                disegno.addShapeToMap({
+                    uid: p.uid,
+                    num: pNum || (++polyCounter),
+                    shapeType: p.shapeType || "POLYGON",
+                    radius: p.radius || 0,
+                    points: p.points || [],
+                    color: p.color || "#c0392b",
+                    nota: p.nota || "",
+                    scenarioLabel: p.scenarioLabel || "Disegno",
+                    autore: p.autore || "Operatore",
+                    ora: p.ora || "",
+                    openPopup: false
+                });
+            }
+        });
+        if (maxP > polyCounter) polyCounter = maxP;
+
+        let maxT = 0;
+        (ev.textLabels || []).forEach(function(t) {
+            const tNum = parseInt(String(t.uid || "").replace(/\D+/g, ""), 10) || 0;
+            if (tNum > maxT) maxT = tNum;
+            if (typeof disegno.addFreeTextToMap === "function") {
+                disegno.addFreeTextToMap({
+                    uid: t.uid,
+                    text: t.text || "Nota",
+                    color: t.color || "#dc2626",
+                    latlng: [t.lat, t.lng],
+                    autore: t.autore || "Operatore",
+                    ora: t.ora || "",
+                    openPopup: false
+                });
+            }
+        });
+        if (maxT > textLabelCounter) textLabelCounter = maxT;
+
+        const logBox = document.getElementById("log-container");
+        if (ev.logs && ev.logs.length > 0 && logBox) {
+            logBox.innerHTML = "";
+            ev.logs.forEach(function(line) {
+                logsRegistry.push(line);
+                logBox.innerHTML += line + "<br>";
+            });
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+        if (typeof cloud.refreshEventDropdown === "function") cloud.refreshEventDropdown(currentEventId);
+        applyEditStateToUi();
+    }
+
+    function canEditCurrentEvent() {
+        if (!operatorModeActive) return false;
+        if (!currentEventId) return true;
+        if (!currentEventPassword) return true;
+        return Boolean(unlockedEventIds[currentEventId]);
+    }
+
+    function applyEditStateToUi() {
+        const cloud = getCloud();
+        const disegno = getDisegno();
+        isEditable = canEditCurrentEvent();
+        const lockBtn = document.getElementById("btn-unlock-event");
+        const badge = document.getElementById("event-lock-badge");
+        const statusEl = document.getElementById("status-lock");
+
+        const opBar = document.getElementById("operator-event-bar");
+        if (opBar) opBar.style.display = operatorModeActive ? "block" : "none";
+
+        if (!operatorModeActive) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Sola Lettura Libera</b>";
+            if (lockBtn) lockBtn.style.display = "none";
+        } else if (!currentEventId) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Nuovo Evento (Modifica Attiva)</b>";
+            if (badge) badge.textContent = "Creazione nuovo evento libera con password scelta da Lei.";
+            if (lockBtn) lockBtn.style.display = "none";
+        } else if (!currentEventPassword || unlockedEventIds[currentEventId]) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Modifica Evento Sbloccata</b>";
+            if (badge) badge.textContent = currentEventPassword ? "Evento sbloccato con password dedicata." : "Evento aperto (senza password dedicata).";
+            if (lockBtn) lockBtn.style.display = "none";
+        } else {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Evento Protetto (Sola Lettura)</b>";
+            if (badge) badge.textContent = "Questo evento ha una password propria: inseriscila per modificarlo.";
+            if (lockBtn) lockBtn.style.display = "block";
+        }
+
+        document.querySelectorAll(".edit-only-box").forEach(function(el) {
+            if (isEditable) el.classList.remove("locked");
+            else el.classList.add("locked");
+        });
+        if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
+        if (typeof cloud.renderCloudCollaboration === "function") cloud.renderCloudCollaboration(currentEventId);
+
+        Object.keys(markersRegistry).forEach(function(k) {
+            const entry = markersRegistry[k];
+            if (entry.marker && entry.marker.dragging) {
+                if (isEditable) entry.marker.dragging.enable();
+                else entry.marker.dragging.disable();
+            }
+            if (typeof disegno.aggiornaIconaMarker === "function") disegno.aggiornaIconaMarker(entry);
+        });
+        Object.keys(textLabelsRegistry).forEach(function(k) {
+            const t = textLabelsRegistry[k];
+            if (t.marker && t.marker.dragging) {
+                if (isEditable) t.marker.dragging.enable();
+                else t.marker.dragging.disable();
+            }
+            if (typeof disegno.getFreeTextPopupContent === "function") {
+                t.marker.setPopupContent(disegno.getFreeTextPopupContent(t));
+            }
+        });
+        Object.keys(polygonsRegistry).forEach(function(k) {
+            const p = polygonsRegistry[k];
+            if (typeof disegno.getPolygonPopupContent === "function") {
+                p.layer.setPopupContent(disegno.getPolygonPopupContent(p));
+            }
+        });
+    }
+
+    function promptUnlockCurrentEvent() {
+        if (!operatorModeActive) {
+            alert("Apra il menu 'Stato', inserisca Nome/Qualifica e clicchi su 'Abilita Modalità Operatore'.");
+            const accAuth = document.getElementById("acc-auth");
+            if (accAuth) accAuth.open = true;
+            return false;
+        }
+        if (!currentEventId || !currentEventPassword) {
+            applyEditStateToUi();
+            return true;
+        }
+        if (unlockedEventIds[currentEventId]) {
+            applyEditStateToUi();
+            return true;
+        }
+        const entered = prompt("Inserisca la password impostata per questo evento:");
+        if (entered === null) return false;
+        if (entered !== currentEventPassword) {
+            alert("Password evento errata. L'evento resta in sola lettura.");
+            return false;
+        }
+        unlockedEventIds[currentEventId] = true;
+        applyEditStateToUi();
+        registraLog("Evento sbloccato con password dedicata.");
+        return true;
+    }
+
+    function sbloccaModifica() {
+        const nome = document.getElementById("op-name-input").value.trim();
+        const email = document.getElementById("op-email-input").value.trim();
+        const role = document.getElementById("op-role-input").value.trim() || "DOS / Responsabile";
+        if (!nome) {
+            const accAuth = document.getElementById("acc-auth");
+            if (accAuth) accAuth.open = true;
+            return alert("Inserire Nome e Cognome / Qualifica dell'operatore.");
+        }
+
+        currentOperator = nome;
+        currentOperatorEmail = email;
+        currentOperatorRole = role;
+        operatorModeActive = true;
+
+        document.getElementById("op-active-label").textContent = "Operatore: " + currentOperator;
+        document.getElementById("op-meta-label").textContent = (email ? email + " | " : "") + role;
+        document.getElementById("login-area").style.display = "none";
+        document.getElementById("logout-area").style.display = "block";
+        applyEditStateToUi();
+        registraLog("Modalita operatore attiva (" + role + ").");
+        return true;
+    }
+
+    function bloccaModifica() {
+        const disegno = getDisegno();
+        if (typeof disegno.cancelActiveDraw === "function") disegno.cancelActiveDraw();
+        if (typeof disegno.clearSelectedMarker === "function") disegno.clearSelectedMarker();
+        registraLog("Tornato in sola lettura libera.");
+        operatorModeActive = false;
+        isEditable = false;
+        currentOperator = "";
+        document.getElementById("login-area").style.display = "block";
+        document.getElementById("logout-area").style.display = "none";
+        applyEditStateToUi();
+    }
+
+    function registraLog(testo) {
+        const ora = new Date().toLocaleTimeString();
+        const autore = currentOperator || "Consultazione";
+        const line = "[" + ora + "] <b>" + escapeHtml(autore) + ":</b> " + testo;
+        logsRegistry.push(line);
+        const box = document.getElementById("log-container");
+        if (!box) return;
+        if (box.textContent.indexOf("Nessuna modifica") !== -1) {
+            box.innerHTML = "";
+        }
+        box.innerHTML += line + "<br>";
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function clearMapElements() {
+        const disegno = getDisegno();
+        if (typeof disegno.cancelActiveDraw === "function") disegno.cancelActiveDraw();
+        if (typeof disegno.clearSelectedMarker === "function") disegno.clearSelectedMarker();
+        Object.keys(markersRegistry).forEach(function(k) {
+            if (map && markersRegistry[k].marker) map.removeLayer(markersRegistry[k].marker);
+            delete markersRegistry[k];
+        });
+        Object.keys(polygonsRegistry).forEach(function(k) {
+            if (map && polygonsRegistry[k].layer) map.removeLayer(polygonsRegistry[k].layer);
+            delete polygonsRegistry[k];
+        });
+        Object.keys(textLabelsRegistry).forEach(function(k) {
+            if (map && textLabelsRegistry[k].marker) map.removeLayer(textLabelsRegistry[k].marker);
+            delete textLabelsRegistry[k];
+        });
+        markerCounter = 0;
+        polyCounter = 0;
+        textLabelCounter = 0;
+        logsRegistry.length = 0;
+        const logBox = document.getElementById("log-container");
+        if (logBox) logBox.textContent = "Nessuna modifica registrata.";
+    }
+
+    window.SITAC_APP = {
+        getMap: function() { return map; },
+        getIsEditable: function() { return isEditable; },
+        getOperatorModeActive: function() { return operatorModeActive; },
+        getCurrentEventId: function() { return currentEventId; },
+        setInitialEventId: function(id) { currentEventId = id || ""; },
+        setCurrentEventState: function(id, pwd) {
+            currentEventId = id || "";
+            currentEventPassword = pwd || "";
+        },
+        getCurrentEventPassword: function() { return currentEventPassword; },
+        getUnlockedEventIds: function() { return unlockedEventIds; },
+        getCurrentOperator: function() { return currentOperator; },
+        getCurrentOperatorEmail: function() { return currentOperatorEmail; },
+        getCurrentOperatorRole: function() { return currentOperatorRole; },
+        getCurrentLat: function() { return currentLat; },
+        getCurrentLng: function() { return currentLng; },
+        getHasGpsFix: function() { return hasGpsFix; },
+        setGpsCoords: function(lat, lng, fix) {
+            currentLat = String(lat);
+            currentLng = String(lng);
+            hasGpsFix = Boolean(fix);
+        },
+        getGpsMarker: function() { return gpsMarker; },
+        setGpsMarker: function(m) { gpsMarker = m; },
+        setSharedGpsMarker: function(m) { sharedGpsMarker = m; },
+        getMarkersRegistry: function() { return markersRegistry; },
+        getPolygonsRegistry: function() { return polygonsRegistry; },
+        getTextLabelsRegistry: function() { return textLabelsRegistry; },
+        getOverlayRegistry: function() { return overlayRegistry; },
+        nextMarkerCounter: function() { return (++markerCounter); },
+        nextPolyCounter: function() { return (++polyCounter); },
+        getPolyCounter: function() { return polyCounter; },
+        nextTextLabelCounter: function() { return (++textLabelCounter); },
+        escapeHtml: escapeHtml,
+        setDiag: setDiag,
+        registraLog: registraLog,
+        sbloccaModifica: sbloccaModifica,
+        promptUnlockCurrentEvent: promptUnlockCurrentEvent,
+        applyEditStateToUi: applyEditStateToUi,
+        serializeCurrentState: serializeCurrentState,
+        loadEventIntoMap: loadEventIntoMap,
+        clearMapElements: clearMapElements,
+        aggiornaMarkerOperatoriRemoti: function() {
+            const gm = getGpsMeteo();
+            if (typeof gm.aggiornaMarkerOperatoriRemoti === "function") {
+                gm.aggiornaMarkerOperatoriRemoti();
+            }
+        }
+    };
+
+    function initApp() {
+        const cloud = getCloud();
+        const gpsMeteo = getGpsMeteo();
+        const disegno = getDisegno();
+
+        document.getElementById("btn-toggle-intro").addEventListener("click", function() {
+            const body = document.getElementById("intro-body");
+            const hidden = body.style.display === "none";
+            body.style.display = hidden ? "block" : "none";
+            this.textContent = hidden ? "Riduci" : "Info";
+        });
+
+        const btnToggleMeteo = document.getElementById("btn-toggle-meteo");
+        if (btnToggleMeteo) {
+            btnToggleMeteo.addEventListener("click", function() {
+                const body = document.getElementById("meteo-body");
+                if (!body) return;
+                const hidden = body.style.display === "none";
+                body.style.display = hidden ? "block" : "none";
+                this.textContent = hidden ? "Riduci" : "Espandi";
+            });
+        }
+
+        const btnToggleToolbar = document.getElementById("btn-toggle-toolbar");
+        if (btnToggleToolbar) {
+            btnToggleToolbar.addEventListener("click", function() {
+                const tb = document.getElementById("toolbar");
+                const content = document.getElementById("toolbar-content");
+                const titleEl = document.getElementById("toolbar-main-title");
+                if (!tb || !content) return;
+                const isCollapsed = tb.classList.toggle("collapsed");
+                content.style.display = isCollapsed ? "none" : "block";
+                if (titleEl) titleEl.textContent = isCollapsed ? "SITAC" : "SITAC — MAPPE OPERATIVE";
+                this.textContent = isCollapsed ? "Apri Barra" : "Riduci Barra";
+            });
+        }
+
+        document.getElementById("event-select").addEventListener("change", function() {
+            const chosenId = this.value;
+            if (!chosenId) return;
+            const list = typeof cloud.safeReadStorage === "function" ? cloud.safeReadStorage() : [];
+            const found = list.find(function(ev) { return ev.id === chosenId; });
+            if (found) loadEventIntoMap(found);
+        });
+
+        document.getElementById("btn-gate-readonly").addEventListener("click", function() {
+            const gName = document.getElementById("gate-name").value.trim();
+            const gEmail = document.getElementById("gate-email").value.trim();
+            const gRole = document.getElementById("gate-role").value.trim();
+            if (gName) document.getElementById("op-name-input").value = gName;
+            if (gEmail) document.getElementById("op-email-input").value = gEmail;
+            if (gRole) document.getElementById("op-role-input").value = gRole;
+            document.getElementById("entry-gate").style.display = "none";
+            if (map) map.invalidateSize();
+        });
+
+        document.getElementById("btn-gate-edit").addEventListener("click", function() {
+            document.getElementById("op-name-input").value = document.getElementById("gate-name").value.trim();
+            document.getElementById("op-email-input").value = document.getElementById("gate-email").value.trim();
+            document.getElementById("op-role-input").value = document.getElementById("gate-role").value.trim() || "DOS / Responsabile";
+            if (sbloccaModifica()) {
+                document.getElementById("entry-gate").style.display = "none";
+                if (map) map.invalidateSize();
+            }
+        });
+
+        document.getElementById("btn-unlock-event").addEventListener("click", promptUnlockCurrentEvent);
+        document.getElementById("btn-cloud-sync").addEventListener("click", function() {
+            if (typeof cloud.syncFromCloud === "function") cloud.syncFromCloud(currentEventId, false);
+        });
+        document.getElementById("btn-cloud-add-entry").addEventListener("click", function() {
+            if (typeof cloud.handleAddCloudEntry === "function") cloud.handleAddCloudEntry();
+        });
+        document.getElementById("btn-event-new").addEventListener("click", function() {
+            if (typeof cloud.handleNewEvent === "function") cloud.handleNewEvent();
+        });
+        document.getElementById("btn-event-save").addEventListener("click", function() {
+            if (typeof cloud.handleSaveEvent === "function") cloud.handleSaveEvent();
+        });
+        document.getElementById("btn-event-del").addEventListener("click", function() {
+            if (typeof cloud.handleDeleteEvent === "function") cloud.handleDeleteEvent();
+        });
+        document.getElementById("btn-event-export").addEventListener("click", function() {
+            if (typeof cloud.handleExportJson === "function") cloud.handleExportJson();
+        });
+        document.getElementById("btn-event-import").addEventListener("click", function() {
+            document.getElementById("event-import-file").click();
+        });
+        document.getElementById("event-import-file").addEventListener("change", function(e) {
+            if (typeof cloud.handleImportJsonFile === "function") cloud.handleImportJsonFile(e);
+        });
+
+        document.getElementById("scenario-select").addEventListener("change", function() {
+            if (typeof disegno.populateSubscenarios === "function") disegno.populateSubscenarios();
+            if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
+        });
+        document.getElementById("subscenario-select").addEventListener("change", function() {
+            if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
+        });
+        document.getElementById("btn-unlock").addEventListener("click", sbloccaModifica);
+        document.getElementById("btn-lock").addEventListener("click", bloccaModifica);
+
+        document.getElementById("btn-gps-locate").addEventListener("click", function() {
+            if (typeof gpsMeteo.richiediGps === "function") gpsMeteo.richiediGps();
+        });
+        document.getElementById("btn-gps-share").addEventListener("click", function() {
+            if (typeof gpsMeteo.condividiPosizioneGps === "function") gpsMeteo.condividiPosizioneGps();
+        });
+        document.getElementById("btn-invite-event").addEventListener("click", function() {
+            if (typeof gpsMeteo.copiaLinkInvitoEvento === "function") gpsMeteo.copiaLinkInvitoEvento();
+        });
+        document.getElementById("btn-gps-live-toggle").addEventListener("click", function() {
+            if (typeof gpsMeteo.toggleGpsLive === "function") gpsMeteo.toggleGpsLive();
+        });
+        document.getElementById("btn-meteo").addEventListener("click", function() {
+            if (typeof gpsMeteo.aggiornaMeteoVento === "function") gpsMeteo.aggiornaMeteoVento();
+        });
+
+        document.getElementById("btn-draw-line").addEventListener("click", function() {
+            if (typeof disegno.startFreeDraw === "function") disegno.startFreeDraw("LINE");
+        });
+        document.getElementById("btn-draw-rect").addEventListener("click", function() {
+            if (typeof disegno.startFreeDraw === "function") disegno.startFreeDraw("RECT");
+        });
+        document.getElementById("btn-draw-circle").addEventListener("click", function() {
+            if (typeof disegno.startFreeDraw === "function") disegno.startFreeDraw("CIRCLE");
+        });
+        document.getElementById("btn-draw-triangle").addEventListener("click", function() {
+            if (typeof disegno.startFreeDraw === "function") disegno.startFreeDraw("TRIANGLE");
+        });
+        document.getElementById("btn-draw-cancel").addEventListener("click", function() {
+            if (typeof disegno.cancelActiveDraw === "function") disegno.cancelActiveDraw();
+        });
+        document.getElementById("btn-draw-text").addEventListener("click", function() {
+            if (!operatorModeActive && !sbloccaModifica()) return;
+            if (currentEventId && currentEventPassword && !unlockedEventIds[currentEventId]) {
+                if (!promptUnlockCurrentEvent()) return;
+            }
+            if (!isEditable || !map) return;
+            const inp = document.getElementById("draw-label-input");
+            const colEl = document.getElementById("draw-color-input");
+            const txt = (inp && inp.value.trim()) ? inp.value.trim() : prompt("Inserisci il testo della scritta sulla mappa:");
+            if (!txt || !txt.trim()) return;
+            const center = map.getCenter();
+            if (typeof disegno.addFreeTextToMap === "function") {
+                disegno.addFreeTextToMap({
+                    text: txt.trim(),
+                    color: colEl ? colEl.value : "#dc2626",
+                    latlng: [center.lat, center.lng],
+                    openPopup: true
+                });
+            }
+            if (inp) inp.value = "";
+            registraLog("Inserita scritta su mappa: " + txt.trim());
+        });
+
+        if (typeof disegno.populateSubscenarios === "function") disegno.populateSubscenarios();
+        if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
+        if (typeof disegno.renderOverlayControls === "function") disegno.renderOverlayControls();
+        if (typeof cloud.refreshEventDropdown === "function") cloud.refreshEventDropdown("");
+
+        if (typeof L === "undefined") {
+            setDiag("Legenda e layer pronti | Mappa offline (Leaflet non raggiungibile)", true);
+            return;
+        }
+
+        try {
+            map = L.map("map", { doubleClickZoom: false }).setView([parseFloat(currentLat), parseFloat(currentLng)], 13);
+
+            const googleSat = L.tileLayer("https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}", {
+                maxZoom: 20, subdomains: ["mt0", "mt1", "mt2", "mt3"], attribution: "&copy; Google Maps"
+            });
+
+            const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19, attribution: "&copy; OpenStreetMap"
+            });
+
+            googleSat.addTo(map);
+            L.control.layers({ "Google Satellite": googleSat, "OpenStreetMap": osm }, {}).addTo(map);
+
+            map.on("click", function(e) {
+                if (typeof disegno.clearSelectedMarker === "function") {
+                    const reg = markersRegistry;
+                    Object.keys(reg).forEach(function(k) {
+                        const prevEntry = reg[k];
+                        if (prevEntry && prevEntry.marker && prevEntry.marker.getElement) {
+                            const el = prevEntry.marker.getElement();
+                            if (el && el.querySelector(".sitac-wrapper.selected-item")) {
+                                disegno.clearSelectedMarker();
+                                if (typeof disegno.aggiornaIconaMarker === "function") {
+                                    disegno.aggiornaIconaMarker(prevEntry);
+                                }
+                            }
+                        }
+                    });
+                }
+                if (typeof disegno.handleMapClickForDraw === "function") {
+                    disegno.handleMapClickForDraw(e.latlng);
+                }
+            });
+
+            map.on("zoom", function() {
+                if (typeof disegno.applyLiveTransformToMarkerDom === "function") {
+                    Object.keys(markersRegistry).forEach(function(k) {
+                        disegno.applyLiveTransformToMarkerDom(markersRegistry[k]);
+                    });
+                }
+            });
+
+            map.on("zoomend", function() {
+                if (typeof disegno.aggiornaIconaMarker === "function") {
+                    Object.keys(markersRegistry).forEach(function(k) {
+                        const e = markersRegistry[k];
+                        if (e && e.marker) {
+                            disegno.aggiornaIconaMarker(e);
+                        }
+                    });
+                }
+            });
+
+            map.on("dblclick", function(e) {
+                if (!isEditable) return;
+                const mode = typeof disegno.getActiveDrawMode === "function" ? disegno.getActiveDrawMode() : null;
+                if (mode === "LINE" || mode === "POLYGON") {
+                    L.DomEvent.stopPropagation(e);
+                    const pts = typeof disegno.getDrawPointsCopy === "function" ? disegno.getDrawPointsCopy() : [];
+                    if (typeof disegno.finalizeDrawnShape === "function") {
+                        disegno.finalizeDrawnShape(mode, pts, 0);
+                    }
+                }
+            });
+
+            if (typeof gpsMeteo.applicaPosizioneCondivisaDaUrl === "function") {
+                gpsMeteo.applicaPosizioneCondivisaDaUrl();
+            }
+            if (typeof cloud.syncFromCloud === "function") {
+                cloud.syncFromCloud("", true);
+            }
+
+            map.locate({ setView: false, maxZoom: 15 });
+            map.on("locationfound", function(e) {
+                if (typeof gpsMeteo.aggiornaGpsMarker === "function") {
+                    gpsMeteo.aggiornaGpsMarker(e.latlng.lat, e.latlng.lng, e.accuracy);
+                }
+            });
+
+            if (window.innerWidth <= 768) {
+                const tb = document.getElementById("toolbar");
+                const content = document.getElementById("toolbar-content");
+                const titleEl = document.getElementById("toolbar-main-title");
+                const btnTb = document.getElementById("btn-toggle-toolbar");
+                if (tb && content && !tb.classList.contains("collapsed")) {
+                    tb.classList.add("collapsed");
+                    content.style.display = "none";
+                    if (titleEl) titleEl.textContent = "SITAC";
+                    if (btnTb) btnTb.textContent = "Apri Barra";
+                }
+            }
+
+            setDiag("Sistema pronto | Eventi + 4 Scenari + Disegno + GPS", false);
+        } catch (err) {
+            setDiag("Errore mappa: " + err.message, true);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", initApp);
+    } else {
+        initApp();
+    }
+})();
+</script>
+
+<!-- REGISTRAZIONE SERVICE WORKER PWA -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('SITAC Service Worker registrato:', reg.scope))
+        .catch(err => console.error('Errore registrazione Service Worker:', err));
+    });
+  }
+</script>
+</body>
+</html>
+```[cite: 1]
+
+Tutti e 6 i file della struttura modulare sono ora pronti. Desidera che aggiorniamo anche l'elenco delle risorse nel file `sw.js` per includere i nuovi percorsi `css/` e `js/` nella cache offline?
