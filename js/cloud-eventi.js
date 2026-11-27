@@ -309,7 +309,7 @@
         app.registraLog("Preparato nuovo evento: " + title);
     }
 
-function handleSaveEvent() {
+    function handleSaveEvent() {
         const app = getApp();
         if (!app.getOperatorModeActive() && !app.sbloccaModifica()) return;
         const pwdEl = document.getElementById("event-pwd-input");
@@ -356,26 +356,6 @@ function handleSaveEvent() {
                 summary: packedSummary,
                 is_test: isTest,
                 role: me.role
-            });
-            app.registraLog("Aggiornato evento online '" + snap.title + "'");
-        } else {
-            postToCloud({
-                action: "create_event",
-                title: snap.title,
-                summary: packedSummary,
-                is_test: isTest,
-                role: me.role,
-                status: "Aperto"
-            });
-            app.registraLog("Creato nuovo evento online '" + snap.title + "'");
-        }
-    }            postToCloud({
-                action: "edit_field",
-                event_id: currentEvId,
-                target_type: "evento",
-                target_id: currentEvId,
-                field: "summary",
-                new_value: packedSummary
             });
             app.registraLog("Aggiornato evento online '" + snap.title + "'");
         } else {
