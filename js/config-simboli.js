@@ -61,6 +61,176 @@
             fillColor: "#f59e0b",
             defaultOn: false,
             defaultOpacity: 0.70
+        },
+        {
+            id: "wms_aib_bocchette",
+            label: "AIB — Bocchette AIB",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "bocchetta_aib",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_idranti",
+            label: "AIB — Idranti",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "idranti",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_vasche",
+            label: "AIB — Vasche di captazione",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "vasche",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_prese",
+            label: "AIB — Prese d'acqua",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "presa2",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_sorgenti",
+            label: "AIB — Sorgenti",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "sorgente",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_bacini",
+            label: "AIB — Laghi, bacini, invasi",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "bacino_edison",
+            defaultOn: false,
+            defaultOpacity: 0.75
+        },
+        {
+            id: "wms_aib_acquedotti",
+            label: "AIB — Acquedotti AIB",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "acquedotti_aib",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_eli",
+            label: "AIB — Piazzole elicottero",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "piazzole_elicottero",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_viab_prin",
+            label: "AIB — Viabilità principale",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "viabilita_principale",
+            defaultOn: false,
+            defaultOpacity: 0.80
+        },
+        {
+            id: "wms_aib_viab_sec",
+            label: "AIB — Viabilità secondaria",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "viab_second",
+            defaultOn: false,
+            defaultOpacity: 0.80
+        },
+        {
+            id: "wms_aib_sentieri",
+            label: "AIB — Mulattiere e sentieri pedonali",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "mulattiere_e_sentieri_pedonali",
+            defaultOn: false,
+            defaultOpacity: 0.80
+        },
+        {
+            id: "wms_aib_incendi",
+            label: "AIB — Incendi",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "incendi",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_loc_incendi",
+            label: "AIB — Localizzazione incendi",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "localizzazione_incendio",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_videocamera",
+            label: "AIB — Videocamera",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "videocamera",
+            defaultOn: false,
+            defaultOpacity: 0.85
+        },
+        {
+            id: "wms_aib_linee_el",
+            label: "AIB — Linee elettriche",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "lineel",
+            defaultOn: false,
+            defaultOpacity: 0.80
+        },
+        {
+            id: "wms_aib_oglio",
+            label: "AIB — Fiume Oglio",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "oglio",
+            defaultOn: false,
+            defaultOpacity: 0.75
+        },
+        {
+            id: "wms_aib_comuni",
+            label: "AIB — Confini comunali",
+            attribution: "CM Valle Camonica / AIB",
+            type: "wms",
+            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
+            wmsLayers: "comuni",
+            defaultOn: false,
+            defaultOpacity: 0.70
         }
     ];
 
