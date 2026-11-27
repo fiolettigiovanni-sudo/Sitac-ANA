@@ -29,6 +29,8 @@
         ]
     };
 
+    const AIB_WMS_URL = "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz";
+
     const OVERLAY_CONFIGS = [
         {
             id: "ctr_lombardia",
@@ -63,174 +65,44 @@
             defaultOpacity: 0.70
         },
         {
-            id: "wms_aib_bocchette",
-            label: "AIB — Bocchette AIB",
+            id: "aib_acqua",
+            label: "AIB Vallecamonica — Punti acqua, idranti e vasche",
             attribution: "CM Valle Camonica / AIB",
             type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "bocchetta_aib",
+            url: AIB_WMS_URL,
+            wmsLayers: "bocchetta_aib,idranti,vasche,presa2,sorgente,bacino_edison,acquedotti_aib",
             defaultOn: false,
             defaultOpacity: 0.85
         },
         {
-            id: "wms_aib_idranti",
-            label: "AIB — Idranti",
+            id: "aib_viabilita",
+            label: "AIB Vallecamonica — Viabilità, sentieri e piazzole",
             attribution: "CM Valle Camonica / AIB",
             type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "idranti",
+            url: AIB_WMS_URL,
+            wmsLayers: "piazzole_elicottero,viabilita_principale,viab_second,mulattiere_e_sentieri_pedonali",
             defaultOn: false,
-            defaultOpacity: 0.85
+            defaultOpacity: 0.80
         },
         {
-            id: "wms_aib_vasche",
-            label: "AIB — Vasche di captazione",
+            id: "aib_reti_confini",
+            label: "AIB Vallecamonica — Linee elettriche, Oglio e confini",
             attribution: "CM Valle Camonica / AIB",
             type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "vasche",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_prese",
-            label: "AIB — Prese d'acqua",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "presa2",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_sorgenti",
-            label: "AIB — Sorgenti",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "sorgente",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_bacini",
-            label: "AIB — Laghi, bacini, invasi",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "bacino_edison",
+            url: AIB_WMS_URL,
+            wmsLayers: "lineel,oglio,comuni",
             defaultOn: false,
             defaultOpacity: 0.75
         },
         {
-            id: "wms_aib_acquedotti",
-            label: "AIB — Acquedotti AIB",
+            id: "aib_incendi_cam",
+            label: "AIB Vallecamonica — Incendi e videocamere",
             attribution: "CM Valle Camonica / AIB",
             type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "acquedotti_aib",
+            url: AIB_WMS_URL,
+            wmsLayers: "incendi,localizzazione_incendio,videocamera",
             defaultOn: false,
             defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_eli",
-            label: "AIB — Piazzole elicottero",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "piazzole_elicottero",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_viab_prin",
-            label: "AIB — Viabilità principale",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "viabilita_principale",
-            defaultOn: false,
-            defaultOpacity: 0.80
-        },
-        {
-            id: "wms_aib_viab_sec",
-            label: "AIB — Viabilità secondaria",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "viab_second",
-            defaultOn: false,
-            defaultOpacity: 0.80
-        },
-        {
-            id: "wms_aib_sentieri",
-            label: "AIB — Mulattiere e sentieri pedonali",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "mulattiere_e_sentieri_pedonali",
-            defaultOn: false,
-            defaultOpacity: 0.80
-        },
-        {
-            id: "wms_aib_incendi",
-            label: "AIB — Incendi",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "incendi",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_loc_incendi",
-            label: "AIB — Localizzazione incendi",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "localizzazione_incendio",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_videocamera",
-            label: "AIB — Videocamera",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "videocamera",
-            defaultOn: false,
-            defaultOpacity: 0.85
-        },
-        {
-            id: "wms_aib_linee_el",
-            label: "AIB — Linee elettriche",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "lineel",
-            defaultOn: false,
-            defaultOpacity: 0.80
-        },
-        {
-            id: "wms_aib_oglio",
-            label: "AIB — Fiume Oglio",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "oglio",
-            defaultOn: false,
-            defaultOpacity: 0.75
-        },
-        {
-            id: "wms_aib_comuni",
-            label: "AIB — Confini comunali",
-            attribution: "CM Valle Camonica / AIB",
-            type: "wms",
-            url: "https://gis.dw-cmvc.neratech.cloud/ows/?MAP=/io/projects/05.anticendio_boschivo/dwh_antincendio_boschivo.qgz",
-            wmsLayers: "comuni",
-            defaultOn: false,
-            defaultOpacity: 0.70
         }
     ];
 
@@ -265,94 +137,4 @@
         { id: 26, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#1e3a8a", nome: "Direzione del vento intensita forte", svgType: "WIND_3", size: [66, 22] },
         { id: 27, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#c0392b", nome: "Incendio di chioma", svgType: "FIRE_CROWN", size: [54, 22] },
         { id: 28, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#ea580c", nome: "Incendio radente", svgType: "FIRE_SURFACE", size: [54, 22] },
-        { id: 29, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#7c2d12", nome: "Incendio sotterraneo", svgType: "FIRE_GROUND", size: [54, 22] },
-
-        { id: 30, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "CAN", nome: "Canadair", tipoBox: "AEREO", size: [50, 32] },
-        { id: 31, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "S 64", nome: "S 64", tipoBox: "AEREO", size: [50, 32] },
-        { id: 32, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "Boss", nome: "Fireboss", tipoBox: "AEREO", size: [50, 32] },
-        { id: 33, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "Eli", nome: "Elicotteri medi e leggeri", tipoBox: "AEREO", size: [50, 32] },
-        { id: 34, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "Eli Com", nome: "Elicottero Comando", tipoBox: "AEREO", size: [58, 32] },
-        { id: 35, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "AEREO", nome: "Altro mezzo aereo", tipoBox: "AEREO", size: [52, 32] },
-        { id: 36, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "VVF", nome: "Squadra Vigili del Fuoco", tipoBox: "TERRA", size: [48, 30] },
-        { id: 37, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "VOL", nome: "Squadra Volontari", tipoBox: "TERRA", size: [48, 30] },
-        { id: 38, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "GOS", nome: "Squadra GOS", tipoBox: "TERRA", size: [48, 30] },
-        { id: 39, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "SAI", nome: "Squadra SAI", tipoBox: "TERRA", size: [48, 30] },
-        { id: 40, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "SQ", nome: "Altra squadra", tipoBox: "TERRA", size: [48, 30] },
-        { id: 41, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "GRP", nome: "Gruppo", tipoBox: "TERRA", size: [50, 30] },
-        { id: 42, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "COL", nome: "Colonna", tipoBox: "TERRA", size: [50, 30] },
-        { id: 43, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "CP", nome: "Posto di comando", tipoBox: "TERRA", size: [48, 30] },
-        { id: 44, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#c0392b", sigla: "TP", nome: "Transit point", tipoBox: "TERRA", size: [48, 30] },
-        { id: 45, scenario: "SCENARIO_AIB", sub: "AIB_MEZZI", col: "#16a34a", sigla: "SS", nome: "Soccorso sanitario", tipoBox: "SANITARIO", size: [48, 30] },
-
-        { id: 46, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#d97706", sigla: "RIT CAN", nome: "Lancio mezzi aerei pesanti con ritardante", tipoBox: "AZIONE", size: [60, 22] },
-        { id: 47, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#0284c7", sigla: "H2O CAN", nome: "Lancio mezzi aerei pesanti con acqua", tipoBox: "AZIONE", size: [60, 22] },
-        { id: 48, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#d97706", sigla: "RIT ELI", nome: "Lancio elicotteri medi e leggeri con ritardante", tipoBox: "AZIONE", size: [60, 22] },
-        { id: 49, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#0284c7", sigla: "H2O ELI", nome: "Lancio elicotteri medi e leggeri con acqua", tipoBox: "AZIONE", size: [60, 22] },
-        { id: 50, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#2563eb", sigla: "RIC", nome: "Ricognizione", tipoBox: "AZIONE", size: [44, 22] },
-        { id: 51, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#16a34a", sigla: "EV", nome: "Evacuazione", tipoBox: "AZIONE", size: [44, 22] },
-        { id: 52, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "DIF LIN", nome: "Difesa in linea", tipoBox: "AZIONE", size: [58, 22] },
-        { id: 53, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "DIF PER", nome: "Difesa perimetrale", tipoBox: "AZIONE", size: [58, 22] },
-        { id: 54, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "ATT FIAN", nome: "Attacco sui fianchi", tipoBox: "AZIONE", size: [62, 22] },
-        { id: 55, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#c0392b", sigla: "ATT LOC", nome: "Attacco localizzato", tipoBox: "AZIONE", size: [60, 22] },
-        { id: 56, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#0284c7", sigla: "BON", nome: "Bonifica", tipoBox: "AZIONE", size: [48, 22] },
-        { id: 57, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#d97706", sigla: "LIN SIC", nome: "Creazione linea di sicurezza", tipoBox: "AZIONE", size: [58, 22] },
-        { id: 58, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#ea580c", sigla: "ACC PT", nome: "Accensione per punti", tipoBox: "AZIONE", size: [58, 22] },
-        { id: 59, scenario: "SCENARIO_AIB", sub: "AIB_AZIONI", col: "#ea580c", sigla: "ACC LN", nome: "Accensione per linee", tipoBox: "AZIONE", size: [58, 22] },
-
-        { id: 60, scenario: "SCENARIO_IDRO", sub: "IDRO_AREE_POLIGONO", col: "#c0392b", nome: "Poligono area frana / dissesto (perimetro area)", tag: "POLIGONO", borderStyle: "dashed", borderWidth: "3px", isPolygonTool: true, size: [62, 20] },
-        { id: 65, scenario: "SCENARIO_IDRO", sub: "IDRO_AREE_POLIGONO", col: "#c0392b", nome: "Area evacuata / a rischio", tag: "EVAC", solidBg: true, size: [44, 20] },
-
-        { id: 61, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#0284c7", nome: "Esondazione / allagamento", tag: "ESOND", borderStyle: "dashed", size: [52, 20] },
-        { id: 62, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#ea580c", nome: "Dissesto stradale", tag: "DISS STR", size: [56, 20] },
-        { id: 63, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#b45309", nome: "Occlusione alveo / ponti", tag: "OCCL ALV", size: [58, 20] },
-        { id: 64, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#0369a1", nome: "Idrometro / soglia critica", tag: "IDROM", size: [52, 20] },
-        { id: 66, scenario: "SCENARIO_IDRO", sub: "IDRO_RETI_IDRAULICA", col: "#1d4ed8", nome: "Punto di monitoraggio", tag: "MONIT", size: [50, 20] },
-
-        { id: 67, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [46, 28] },
-        { id: 68, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [44, 28] },
-        { id: 69, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 28] },
-        { id: 70, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#c0392b", nome: "Cancelli / varchi chiusi", tag: "X VARCO", solidBg: true, size: [54, 20] },
-        { id: 71, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 28] },
-        { id: 72, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#1d4ed8", sigla: "POLZI", nome: "Polizia / Polizia Locale (POLZI)", tipoBox: "TERRA", size: [48, 28] },
-        { id: 73, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#0f766e", sigla: "RACCOLTA", nome: "Punto di raccolta squadre", tipoBox: "TERRA", size: [62, 28] },
-        { id: 74, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#e67e22", nome: "Punto sensibile", svgType: "SENSITIVE", size: [26, 26] },
-        { id: 75, scenario: "SCENARIO_IDRO", sub: "IDRO_COMANDO_FORZE", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
-
-        { id: 76, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#dc2626", nome: "IPP / Ultimo avvistamento", tag: "IPP", size: [40, 20] },
-        { id: 77, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#2563eb", nome: "Poligono settore di ricerca (perimetro area)", tag: "POLIGONO", borderStyle: "dashed", isPolygonTool: true, size: [62, 20] },
-        { id: 78, scenario: "SCENARIO_RICERCA", sub: "RIC_SETTORI_TRACCE", col: "#0891b2", nome: "Traccia / percorso battuto", tag: "TRACCIA", borderStyle: "dotted", size: [54, 20] },
-
-        { id: 79, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#0f766e", sigla: "RACCOLTA", nome: "Punto di raccolta squadre", tipoBox: "TERRA", size: [62, 28] },
-        { id: 80, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#111827", nome: "Base operativa / piazzola H", svgType: "HELIPAD", size: [26, 26] },
-        { id: 81, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#b45309", sigla: "CIN/SAF", nome: "Squadra cinofila / SAF / speleo", tipoBox: "TERRA", size: [56, 28] },
-        { id: 82, scenario: "SCENARIO_RICERCA", sub: "RIC_SQUADRE_ELISUPPORTO", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 28] },
-
-        { id: 83, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#16a34a", nome: "Persona individuata / evacuata", tag: "INDIV", solidBg: true, size: [48, 20] },
-        { id: 84, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [46, 28] },
-        { id: 85, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [44, 28] },
-        { id: 86, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 28] },
-        { id: 87, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#16a34a", sigla: "SS", nome: "Punto sanitario / soccorso sanitario", tipoBox: "SANITARIO", size: [46, 28] },
-        { id: 88, scenario: "SCENARIO_RICERCA", sub: "RIC_COORDINAMENTO_SANITA", col: "#c0392b", nome: "Accesso interrotto", tag: "X STOP", solidBg: true, size: [48, 20] },
-
-        { id: 89, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0284c7", sigla: "ACCOGL", nome: "Punto di accoglienza / centro assistenza", tipoBox: "TERRA", size: [56, 28] },
-        { id: 90, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0f766e", sigla: "TENDE", nome: "Area tende / ricovero temporaneo", tipoBox: "TERRA", size: [52, 28] },
-        { id: 91, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#d97706", sigla: "MENSA", nome: "Mensa", tipoBox: "TERRA", size: [50, 28] },
-        { id: 92, scenario: "SCENARIO_LOGISTICA", sub: "LOG_ACCOGLIENZA_VIVERI", col: "#0284c7", sigla: "VIVERI/H2O", nome: "Distribuzione acqua / viveri / beni", tipoBox: "TERRA", size: [66, 28] },
-
-        { id: 93, scenario: "SCENARIO_LOGISTICA", sub: "LOG_MEZZI_SANITA", col: "#16a34a", sigla: "SS", nome: "Punto sanitario / soccorso sanitario", tipoBox: "SANITARIO", size: [46, 28] },
-        { id: 94, scenario: "SCENARIO_LOGISTICA", sub: "LOG_MEZZI_SANITA", col: "#4b5563", sigla: "SOSTA/CARB", nome: "Area sosta mezzi / rifornimento", tipoBox: "TERRA", size: [68, 28] },
-
-        { id: 95, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "COC", nome: "Centro Operativo Comunale (COC)", tipoBox: "TERRA", size: [46, 28] },
-        { id: 96, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "CC", nome: "Centro Coordinamento (CC)", tipoBox: "TERRA", size: [44, 28] },
-        { id: 97, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1e3a8a", sigla: "SALA OP", nome: "Sala Operativa", tipoBox: "TERRA", size: [56, 28] },
-        { id: 98, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#c0392b", nome: "Cancelli / varchi chiusi", tag: "X VARCO", solidBg: true, size: [54, 20] },
-        { id: 99, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#374151", sigla: "SQ ___", nome: "Squadra ___", tipoBox: "TERRA", size: [52, 28] },
-        { id: 100, scenario: "SCENARIO_LOGISTICA", sub: "LOG_COORDINAMENTO_CONTROLLO", col: "#1d4ed8", sigla: "POLZI", nome: "Polizia / Polizia Locale (POLZI)", tipoBox: "TERRA", size: [48, 28] }
-    ];
-
-    window.SITAC_CONFIG = {
-        SUBSCENARIOS_BY_SCENARIO: SUBSCENARIOS_BY_SCENARIO,
-        OVERLAY_CONFIGS: OVERLAY_CONFIGS,
-        SIMBOLI: SIMBOLI
-    };
-})();
+        { id: 29, scenario: "SCENARIO_AIB", sub: "AIB_EVOLUZIONE", col: "#7c2d12", nome: "Incendio sotterraneo", svgType: "FIRE_GROUND", size: [54, 22
