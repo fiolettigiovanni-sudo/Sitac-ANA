@@ -309,11 +309,13 @@
         app.registraLog("Preparato nuovo evento: " + title);
     }
 
-    function handleSaveEvent() {
+function handleSaveEvent() {
         const app = getApp();
         if (!app.getOperatorModeActive() && !app.sbloccaModifica()) return;
         const pwdEl = document.getElementById("event-pwd-input");
-        const currentEvId = app.getCurrentEventId();
+        const selectEl = document.getElementById("event-select");
+        const currentEvId = (typeof app.getCurrentEventId === "function" ? app.getCurrentEventId() : "") ||
+            (selectEl ? selectEl.value : "");
         const currentEvPwd = app.getCurrentEventPassword();
         const unlockedMap = app.getUnlockedEventIds();
 
@@ -326,6 +328,9 @@
             if (!app.promptUnlockCurrentEvent()) return;
         }
         const snap = app.serializeCurrentState();
+        if (currentEvId) {
+            snap.id = currentEvId;
+        }
         app.setCurrentEventState(currentEvId, snap.editPassword || "");
         const isTest = document.getElementById("event-is-test").checked;
         const summaryNote = "Simboli: " + snap.markers.length + ", Forme: " + snap.polygons.length + ", Scritte: " + snap.textLabels.length + " (" + snap.savedAt + ")";
@@ -333,13 +338,38 @@
         const me = getCurrentUserPayload();
 
         const existingCloud = (cloudState.events || []).find(function(e) { return e.event_id === currentEvId; });
-        if (existingCloud) {
-            if (existingCloud.author_email && me.email && existingCloud.author_email.toLowerCase() !== me.email.toLowerCase()) {
-                if (!confirm("Questo evento e stato aperto da " + (existingCloud.author_name || existingCloud.author_email) + ". Le tue modifiche alla mappa verranno registrate nella cronologia. Continuare?")) {
+        const localCached = safeReadStorage();
+        const existingLocal = localCached.find(function(e) { return e.id === currentEvId; });
+
+        if (currentEvId && (existingCloud || existingLocal)) {
+            const authorEmail = existingCloud ? existingCloud.author_email : (existingLocal ? existingLocal.authorEmail : "");
+            const authorName = existingCloud ? existingCloud.author_name : (existingLocal ? existingLocal.operator : "");
+            if (authorEmail && me.email && authorEmail.toLowerCase() !== me.email.toLowerCase()) {
+                if (!confirm("Questo evento e stato aperto da " + (authorName || authorEmail) + ". Le tue modifiche alla mappa verranno registrate nella cronologia. Continuare?")) {
                     return;
                 }
             }
             postToCloud({
+                action: "update_event",
+                event_id: currentEvId,
+                title: snap.title,
+                summary: packedSummary,
+                is_test: isTest,
+                role: me.role
+            });
+            app.registraLog("Aggiornato evento online '" + snap.title + "'");
+        } else {
+            postToCloud({
+                action: "create_event",
+                title: snap.title,
+                summary: packedSummary,
+                is_test: isTest,
+                role: me.role,
+                status: "Aperto"
+            });
+            app.registraLog("Creato nuovo evento online '" + snap.title + "'");
+        }
+    }            postToCloud({
                 action: "edit_field",
                 event_id: currentEvId,
                 target_type: "evento",
