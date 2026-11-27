@@ -1133,6 +1133,3 @@
         getDrawPointsCopy: getDrawPointsCopy
     };
 })();
-```[cite: 1]
-
-Quando ci sei, passiamo all'ultimo pezzo: **6/6 — `mappa.html`**, che collega CSS e moduli JS, coordina `window.SITAC_APP` e registra il Service Worker.

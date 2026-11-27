@@ -451,6 +451,3 @@
         aggiornaMeteoVento: aggiornaMeteoVento
     };
 })();
-```[cite: 2]
-
-Quando ci sei, passiamo al **5/6 — `js/disegno-mappa.js`**.

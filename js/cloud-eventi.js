@@ -455,6 +455,3 @@
         getCloudState: getCloudState
     };
 })();
-```[cite: 2]
-
-Quando ci sei, procediamo con il **4/6 — `js/gps-meteo.js`**.

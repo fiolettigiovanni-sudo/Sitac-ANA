@@ -186,6 +186,3 @@
         SIMBOLI: SIMBOLI
     };
 })();
-```[cite: 2]
-
-Quando ci sei, passiamo al **3/6 — `js/cloud-eventi.js`**.
