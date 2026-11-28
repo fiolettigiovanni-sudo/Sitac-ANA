@@ -30,6 +30,14 @@
         return "./mappa.html";
     }
 
+    function hasEventGpsAccess() {
+        const app = getApp();
+        if (typeof app.canViewProtectedEventData === "function") {
+            return app.canViewProtectedEventData();
+        }
+        return true;
+    }
+
     function aggiornaGpsMarker(lat, lng, acc) {
         const app = getApp();
         const latStr = Number(lat).toFixed(6);
@@ -45,7 +53,7 @@
         }
 
         const map = typeof app.getMap === "function" ? app.getMap() : null;
-        if (map && typeof L !== "undefined") {
+        if (map && typeof L !== "undefined" && hasEventGpsAccess()) {
             let gpsMarker = typeof app.getGpsMarker === "function" ? app.getGpsMarker() : null;
             if (!gpsMarker) {
                 gpsMarker = L.circleMarker([parseFloat(latStr), parseFloat(lngStr)], {
@@ -66,6 +74,9 @@
 
     function richiediGps() {
         const app = getApp();
+        if (!hasEventGpsAccess()) {
+            if (typeof app.promptUnlockCurrentEvent === "function" && !app.promptUnlockCurrentEvent()) return;
+        }
         const map = typeof app.getMap === "function" ? app.getMap() : null;
         const statusEl = document.getElementById("gps-status");
         if (statusEl) statusEl.textContent = "Rilevamento GPS in corso...";
@@ -96,6 +107,9 @@
 
     function condividiPosizioneGps() {
         const app = getApp();
+        if (!hasEventGpsAccess()) {
+            if (typeof app.promptUnlockCurrentEvent === "function" && !app.promptUnlockCurrentEvent()) return;
+        }
         const map = typeof app.getMap === "function" ? app.getMap() : null;
         if (!app.getHasGpsFix() && map) {
             const c = map.getCenter();
@@ -146,6 +160,7 @@
     }
 
     function inviaPosizioneLiveCloud(lat, lng, acc) {
+        if (!hasEventGpsAccess()) return;
         const now = Date.now();
         if (now - lastLivePushAt < 8000) return;
         lastLivePushAt = now;
@@ -181,6 +196,18 @@
         const cloud = getCloud();
         const map = typeof app.getMap === "function" ? app.getMap() : null;
         if (!map || typeof L === "undefined") return;
+
+        if (!hasEventGpsAccess()) {
+            Object.keys(remoteOperatorMarkers).forEach(function(existingWho) {
+                map.removeLayer(remoteOperatorMarkers[existingWho]);
+                delete remoteOperatorMarkers[existingWho];
+            });
+            const sumEl = document.getElementById("live-gps-summary");
+            if (sumEl) {
+                sumEl.innerHTML = "<span style='color:#b45309;'>GPS protetto: sblocca l'evento con password per vedere le posizioni.</span>";
+            }
+            return;
+        }
 
         const state = typeof cloud.getCloudState === "function" ? cloud.getCloudState() : { entries: [] };
         const allEntries = Array.isArray(state.entries) ? state.entries : [];
@@ -241,6 +268,9 @@
 
     function toggleGpsLive() {
         const app = getApp();
+        if (!hasEventGpsAccess()) {
+            if (typeof app.promptUnlockCurrentEvent === "function" && !app.promptUnlockCurrentEvent()) return;
+        }
         const cloud = getCloud();
         const btn = document.getElementById("btn-gps-live-toggle");
 
@@ -321,7 +351,7 @@
                 app.setGpsCoords(latStr, lngStr, false);
             }
 
-            if (map && typeof L !== "undefined") {
+            if (map && typeof L !== "undefined" && hasEventGpsAccess()) {
                 map.setView([lat, lng], 15);
                 const sharedGpsMarker = L.circleMarker([lat, lng], {
                     radius: 9,
@@ -363,13 +393,13 @@
             "&longitude=" + lng +
             "&current=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
             "&hourly=temperature_2m,precipitation,wind_speed_10m,wind_direction_10m" +
-            "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max" +
+            "&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset" +
             "&timezone=auto&forecast_days=3";
 
         const infoEl = document.getElementById("meteo-info");
         const curCol = document.getElementById("meteo-current-col");
         const futCol = document.getElementById("meteo-future-col");
-        if (infoEl) infoEl.textContent = "Lettura meteo e previsioni in corso...";
+        if (infoEl) infoEl.textContent = "Lettura meteo, effemeridi e previsioni in corso...";
 
         fetch(url)
             .then(function(r) {
@@ -384,8 +414,14 @@
                 const temp = (cur.temperature_2m !== undefined) ? cur.temperature_2m : "--";
                 const prec = (cur.precipitation !== undefined) ? cur.precipitation : "--";
 
+                const daily = d.daily || {};
+                const sunriseRaw = (daily.sunrise && daily.sunrise[0]) ? String(daily.sunrise[0]) : "";
+                const sunsetRaw = (daily.sunset && daily.sunset[0]) ? String(daily.sunset[0]) : "";
+                const sunriseHm = sunriseRaw.indexOf("T") !== -1 ? sunriseRaw.split("T")[1].slice(0, 5) : (sunriseRaw || "--:--");
+                const sunsetHm = sunsetRaw.indexOf("T") !== -1 ? sunsetRaw.split("T")[1].slice(0, 5) : (sunsetRaw || "--:--");
+
                 if (infoEl) {
-                    infoEl.innerHTML = "Coord: <b>" + lat + ", " + lng + "</b> (" + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + ")";
+                    infoEl.innerHTML = "Coord: <b>" + lat + ", " + lng + "</b> (" + new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) + ") &bull; Alba <b>" + escapeHtml(sunriseHm) + "</b> / Tramonto <b>" + escapeHtml(sunsetHm) + "</b>";
                 }
 
                 if (curCol) {
@@ -394,7 +430,8 @@
                         '<div class="mw-row"><span>Raffiche:</span><b>' + g + ' km/h</b></div>' +
                         '<div class="mw-row"><span>Direzione:</span><b>' + dir + '&deg;</b></div>' +
                         '<div class="mw-row"><span>Temperatura:</span><b>' + temp + ' &deg;C</b></div>' +
-                        '<div class="mw-row"><span>Precipitaz.:</span><b>' + prec + ' mm</b></div>';
+                        '<div class="mw-row"><span>Precipitaz.:</span><b>' + prec + ' mm</b></div>' +
+                        '<div class="mw-row"><span>Effemeridi:</span><b>' + escapeHtml(sunriseHm) + ' / ' + escapeHtml(sunsetHm) + '</b></div>';
                 }
 
                 let futureHtml = '<div style="font-weight:bold; color:#93c5fd; margin-bottom:2px;">Prossime ore:</div>';
@@ -416,22 +453,22 @@
                     shownHours++;
                 }
 
-                const dTimes = (d.daily && d.daily.time) ? d.daily.time : [];
+                const dTimes = (daily.time) ? daily.time : [];
                 if (dTimes.length > 0) {
                     futureHtml += '<div style="font-weight:bold; color:#93c5fd; margin-top:4px; margin-bottom:2px;">Prossimi giorni:</div>';
                     for (let j = 0; j < Math.min(3, dTimes.length); j++) {
                         const dayLbl = String(dTimes[j]).slice(5);
-                        const tMax = (d.daily.temperature_2m_max && d.daily.temperature_2m_max[j] !== undefined) ? d.daily.temperature_2m_max[j] : "--";
-                        const tMin = (d.daily.temperature_2m_min && d.daily.temperature_2m_min[j] !== undefined) ? d.daily.temperature_2m_min[j] : "--";
-                        const pSum = (d.daily.precipitation_sum && d.daily.precipitation_sum[j] !== undefined) ? d.daily.precipitation_sum[j] : "--";
-                        const wMax = (d.daily.wind_speed_10m_max && d.daily.wind_speed_10m_max[j] !== undefined) ? d.daily.wind_speed_10m_max[j] : "--";
+                        const tMax = (daily.temperature_2m_max && daily.temperature_2m_max[j] !== undefined) ? daily.temperature_2m_max[j] : "--";
+                        const tMin = (daily.temperature_2m_min && daily.temperature_2m_min[j] !== undefined) ? daily.temperature_2m_min[j] : "--";
+                        const pSum = (daily.precipitation_sum && daily.precipitation_sum[j] !== undefined) ? daily.precipitation_sum[j] : "--";
+                        const wMax = (daily.wind_speed_10m_max && daily.wind_speed_10m_max[j] !== undefined) ? daily.wind_speed_10m_max[j] : "--";
                         futureHtml += '<div class="mw-fc-item"><b>' + escapeHtml(dayLbl) + '</b>: ' + tMin + '&deg;/&nbsp;' + tMax + '&deg;C &bull; ' + pSum + ' mm &bull; max ' + wMax + ' km/h</div>';
                     }
                 }
 
                 if (futCol) futCol.innerHTML = futureHtml;
                 if (typeof app.registraLog === "function") {
-                    app.registraLog("Meteo (" + lat + ", " + lng + "): " + temp + " C, vento " + s + " km/h, prec " + prec + " mm");
+                    app.registraLog("Meteo (" + lat + ", " + lng + "): " + temp + " C, alba " + sunriseHm + ", tramonto " + sunsetHm);
                 }
             })
             .catch(function() {
