@@ -18,7 +18,7 @@
         <h2>SITAC &bull; MAPPE OPERATIVE</h2>
         <div class="gate-sub">CARTOGRAFIA TATTICA MULTI-SCENARIO &mdash; ARCHIVIO EVENTI ONLINE</div>
         <p>
-            La <b>sola lettura</b> è libera per tutti. Chi crea un nuovo evento sceglie la <b>propria password dedicata a quell'evento</b>; per modificare un evento protetto serve la password di quell'evento.
+            La <b>sola lettura</b> è libera per gli eventi di test/prova. Gli <b>eventi reali</b> e le relative posizioni GPS richiedono la password dedicata all'evento oppure la password amministratore.
         </p>
         <div class="gate-field">
             <label for="gate-name">Nome e Cognome / Qualifica (per chi crea o modifica)</label>
@@ -80,6 +80,7 @@
                     <div class="mw-row"><span>Direzione:</span><b>--</b></div>
                     <div class="mw-row"><span>Temperatura:</span><b>--</b></div>
                     <div class="mw-row"><span>Precipitazioni:</span><b>--</b></div>
+                    <div class="mw-row"><span>Effemeridi:</span><b>-- / --</b></div>
                 </div>
             </div>
             <div class="mw-col-box">
@@ -114,7 +115,7 @@
                     <div id="op-active-label" style="margin-bottom:2px; font-weight:bold;"></div>
                     <div id="op-meta-label" style="font-size:10px; color:#475569; margin-bottom:2px;"></div>
                     <div id="event-lock-badge" style="font-size:10px; font-weight:bold; color:#b45309; margin-bottom:4px;"></div>
-                    <button type="button" class="action-btn" id="btn-unlock-event" style="background:#0369a1; display:none;">Inserisci Password Evento per Modificare</button>
+                    <button type="button" class="action-btn" id="btn-unlock-event" style="background:#0369a1; display:none;">Sblocca Evento con Password / Admin</button>
                     <button type="button" class="action-btn" id="btn-lock" style="background:#7f8c8d; margin-bottom:0;">Torna a Sola Lettura Libera</button>
                 </div>
             </div>
@@ -127,7 +128,10 @@
                     <span id="cloud-sync-status" class="event-meta">Connessione all'archivio online...</span>
                     <button type="button" class="small-btn" id="btn-cloud-sync" style="background:#0369a1; color:#fff;">Aggiorna</button>
                 </div>
-                <select id="event-select">
+                <select id="event-folder-filter" style="margin-top:4px;">
+                    <option value="ALL">Tutte le cartelle</option>
+                </select>
+                <select id="event-select" style="margin-top:4px;">
                     <option value="">-- Seleziona un evento online --</option>
                 </select>
                 <div id="event-active-info" class="event-meta">Nessun evento caricato.</div>
@@ -136,11 +140,19 @@
                 </div>
                 <div class="edit-only-box locked" id="event-edit-controls" style="margin-top:4px;">
                     <input type="text" id="event-title-input" placeholder="Titolo evento (es. Esercitazione Corteno)..." style="margin-bottom:4px;">
+                    <select id="event-type-select" style="margin-bottom:4px;">
+                        <option value="">-- Scelta obbligatoria: Reale o Test/Prova --</option>
+                        <option value="TEST">TEST / PROVA</option>
+                        <option value="REAL">EVENTO REALE (protetto da password)</option>
+                    </select>
+                    <select id="event-folder-select" style="margin-bottom:4px;">
+                        <option value="">-- Seleziona cartella --</option>
+                    </select>
+                    <div style="display:flex; gap:4px; margin-bottom:4px;">
+                        <input type="text" id="new-folder-input" placeholder="Nuova cartella..." style="flex:1; margin:0;">
+                        <button type="button" class="small-btn" id="btn-create-folder" style="background:#0369a1; color:#fff;">+ Cartella</button>
+                    </div>
                     <input type="password" id="event-pwd-input" placeholder="Password dedicata a questo evento..." style="margin-bottom:4px;">
-                    <label style="display:flex; align-items:center; gap:5px; font-size:11px; margin-bottom:4px; cursor:pointer;">
-                        <input type="checkbox" id="event-is-test" checked style="width:auto; margin:0;">
-                        Etichetta [TEST / PROVA]
-                    </label>
                     <div style="display:flex; gap:4px;">
                         <button type="button" class="small-btn" id="btn-event-save" style="flex:1; background:#15803d; color:#fff;">Salva Online</button>
                         <button type="button" class="small-btn" id="btn-event-del" style="background:#b91c1c; color:#fff;">Chiudi / Rimuovi</button>
@@ -258,9 +270,13 @@
 <script src="js/disegno-mappa.js"></script>
 <script>
 (function() {
+    const ADMIN_PASSWORD = "mellon";
+
     let operatorModeActive = false;
     let isEditable = false;
     let currentEventPassword = "";
+    let currentEventIsTest = true;
+    let currentEventFolder = "";
     const unlockedEventIds = {};
     let currentOperator = "";
     let currentOperatorEmail = "";
@@ -310,6 +326,17 @@
             .replace(/"/g, "&quot;");
     }
 
+    function isEventUnlocked(evId) {
+        if (!evId) return true;
+        return Boolean(unlockedEventIds[evId]);
+    }
+
+    function canViewProtectedEventData() {
+        if (!currentEventId) return true;
+        if (currentEventIsTest) return true;
+        return isEventUnlocked(currentEventId);
+    }
+
     function serializeCurrentState(titleOverride) {
         const cloud = getCloud();
         const center = map ? map.getCenter() : { lat: parseFloat(currentLat), lng: parseFloat(currentLng) };
@@ -324,20 +351,10 @@
             const e = markersRegistry[k];
             const ll = e.marker ? e.marker.getLatLng() : center;
             return {
-                uid: e.uid,
-                symId: e.sym.id,
-                stato: e.stato,
-                nota: e.nota || "",
-                noteInterne: e.noteInterne || "",
-                autore: e.autore,
-                ora: e.ora,
-                scale: e.scale,
-                stretchX: e.stretchX,
-                stretchY: e.stretchY,
-                rot: e.rot,
-                baseZoom: e.baseZoom,
-                lat: ll.lat,
-                lng: ll.lng
+                uid: e.uid, symId: e.sym.id, stato: e.stato, nota: e.nota || "",
+                noteInterne: e.noteInterne || "", autore: e.autore, ora: e.ora,
+                scale: e.scale, stretchX: e.stretchX, stretchY: e.stretchY,
+                rot: e.rot, baseZoom: e.baseZoom, lat: ll.lat, lng: ll.lng
             };
         });
 
@@ -355,16 +372,9 @@
                 });
             }
             return {
-                uid: p.uid,
-                num: p.num,
-                shapeType: p.shapeType || "POLYGON",
-                radius: p.radius || 0,
-                points: pts,
-                color: p.color,
-                nota: p.nota,
-                scenarioLabel: p.scenarioLabel,
-                autore: p.autore,
-                ora: p.ora
+                uid: p.uid, num: p.num, shapeType: p.shapeType || "POLYGON",
+                radius: p.radius || 0, points: pts, color: p.color,
+                nota: p.nota, scenarioLabel: p.scenarioLabel, autore: p.autore, ora: p.ora
             };
         });
 
@@ -372,23 +382,25 @@
             const t = textLabelsRegistry[k];
             const ll = t.marker ? t.marker.getLatLng() : center;
             return {
-                uid: t.uid,
-                text: t.text,
-                color: t.color,
-                lat: ll.lat,
-                lng: ll.lng,
-                autore: t.autore,
-                ora: t.ora
+                uid: t.uid, text: t.text, color: t.color,
+                lat: ll.lat, lng: ll.lng, autore: t.autore, ora: t.ora
             };
         });
 
         const pwdInputEl = document.getElementById("event-pwd-input");
         const typedPwd = pwdInputEl ? pwdInputEl.value : "";
         const finalPwd = typedPwd || currentEventPassword || (existing ? (existing.editPassword || "") : "");
+        const typeEl = document.getElementById("event-type-select");
+        const isTestVal = typeEl && typeEl.value ? (typeEl.value === "TEST") : currentEventIsTest;
+        const folderEl = document.getElementById("event-folder-select");
+        const folderVal = (folderEl && folderEl.value) ? folderEl.value : (currentEventFolder || (isTestVal ? "prove" : "Corteno Golgi"));
+
         return {
             id: currentEventId || "",
             title: finalTitle,
             editPassword: finalPwd,
+            isTest: isTestVal,
+            folder: folderVal,
             savedAt: new Date().toLocaleString("it-IT"),
             operator: currentOperator || (existing ? existing.operator : "Operatore"),
             scenario: document.getElementById("scenario-select").value,
@@ -406,16 +418,39 @@
         if (!ev) return;
         const cloud = getCloud();
         const disegno = getDisegno();
+        const gm = getGpsMeteo();
         clearMapElements();
+
         currentEventId = ev.id;
         currentEventPassword = ev.editPassword || "";
-        document.getElementById("event-title-input").value = ev.title || "";
+        currentEventIsTest = Boolean(ev.isTest);
+        currentEventFolder = ev.folder || (currentEventIsTest ? "prove" : "Corteno Golgi");
+
+        const typeEl = document.getElementById("event-type-select");
+        if (typeEl) typeEl.value = currentEventIsTest ? "TEST" : "REAL";
+        if (typeof cloud.refreshFolderDropdowns === "function") {
+            cloud.refreshFolderDropdowns(currentEventFolder);
+        }
+
+        const lockedReal = !currentEventIsTest && !isEventUnlocked(ev.id);
+        document.getElementById("event-title-input").value = lockedReal ? "" : (ev.title || "");
         document.getElementById("event-pwd-input").value = "";
+
+        if (lockedReal) {
+            document.getElementById("event-active-info").innerHTML =
+                "Evento <b>[REALE — PROTETTO]</b> in cartella <b>" + escapeHtml(currentEventFolder) + "</b>" +
+                "<br><span style='color:#b91c1c;font-weight:bold;'>Accesso negato senza password evento o password admin.</span>";
+            if (typeof cloud.refreshEventDropdown === "function") cloud.refreshEventDropdown(currentEventId);
+            applyEditStateToUi();
+            if (typeof gm.aggiornaMarkerOperatoriRemoti === "function") gm.aggiornaMarkerOperatoriRemoti();
+            return;
+        }
+
         const lockInfo = currentEventPassword
-            ? (unlockedEventIds[ev.id] ? " (sbloccato per modifica)" : " (protetto da password evento)")
-            : " (senza password evento)";
+            ? (unlockedEventIds[ev.id] ? " (sbloccato)" : " (protetto da password)")
+            : (currentEventIsTest ? " (test/prova)" : " (senza password)");
         document.getElementById("event-active-info").innerHTML =
-            "Evento: <b>" + escapeHtml(ev.title) + "</b>" + escapeHtml(lockInfo) +
+            "Evento <b>" + (currentEventIsTest ? "[TEST/PROVA]" : "[REALE]") + "</b> <b>" + escapeHtml(ev.title) + "</b> &bull; Cartella: <b>" + escapeHtml(currentEventFolder) + "</b>" + escapeHtml(lockInfo) +
             "<br>Aperto da: " + escapeHtml(ev.operator || "") +
             (ev.authorEmail ? " (" + escapeHtml(ev.authorEmail) + ")" : "") +
             (ev.role ? " &bull; " + escapeHtml(ev.role) : "");
@@ -439,20 +474,10 @@
             if (!isNaN(n) && n > maxM) maxM = n;
             if (typeof disegno.addMarkerFromData === "function") {
                 disegno.addMarkerFromData({
-                    uid: m.uid,
-                    symId: m.symId,
-                    stato: m.stato,
-                    nota: m.nota || "",
-                    noteInterne: m.noteInterne || "",
-                    autore: m.autore,
-                    ora: m.ora,
-                    scale: m.scale,
-                    stretchX: m.stretchX,
-                    stretchY: m.stretchY,
-                    rot: m.rot,
-                    baseZoom: m.baseZoom,
-                    latlng: [m.lat, m.lng],
-                    openPopup: false
+                    uid: m.uid, symId: m.symId, stato: m.stato, nota: m.nota || "",
+                    noteInterne: m.noteInterne || "", autore: m.autore, ora: m.ora,
+                    scale: m.scale, stretchX: m.stretchX, stretchY: m.stretchY,
+                    rot: m.rot, baseZoom: m.baseZoom, latlng: [m.lat, m.lng], openPopup: false
                 });
             }
         });
@@ -464,17 +489,10 @@
             if (pNum > maxP) maxP = pNum;
             if (typeof disegno.addShapeToMap === "function") {
                 disegno.addShapeToMap({
-                    uid: p.uid,
-                    num: pNum || (++polyCounter),
-                    shapeType: p.shapeType || "POLYGON",
-                    radius: p.radius || 0,
-                    points: p.points || [],
-                    color: p.color || "#c0392b",
-                    nota: p.nota || "",
-                    scenarioLabel: p.scenarioLabel || "Disegno",
-                    autore: p.autore || "Operatore",
-                    ora: p.ora || "",
-                    openPopup: false
+                    uid: p.uid, num: pNum || (++polyCounter), shapeType: p.shapeType || "POLYGON",
+                    radius: p.radius || 0, points: p.points || [], color: p.color || "#c0392b",
+                    nota: p.nota || "", scenarioLabel: p.scenarioLabel || "Disegno",
+                    autore: p.autore || "Operatore", ora: p.ora || "", openPopup: false
                 });
             }
         });
@@ -486,13 +504,8 @@
             if (tNum > maxT) maxT = tNum;
             if (typeof disegno.addFreeTextToMap === "function") {
                 disegno.addFreeTextToMap({
-                    uid: t.uid,
-                    text: t.text || "Nota",
-                    color: t.color || "#dc2626",
-                    latlng: [t.lat, t.lng],
-                    autore: t.autore || "Operatore",
-                    ora: t.ora || "",
-                    openPopup: false
+                    uid: t.uid, text: t.text || "Nota", color: t.color || "#dc2626",
+                    latlng: [t.lat, t.lng], autore: t.autore || "Operatore", ora: t.ora || "", openPopup: false
                 });
             }
         });
@@ -509,18 +522,20 @@
         }
         if (typeof cloud.refreshEventDropdown === "function") cloud.refreshEventDropdown(currentEventId);
         applyEditStateToUi();
+        if (typeof gm.aggiornaMarkerOperatoriRemoti === "function") gm.aggiornaMarkerOperatoriRemoti();
     }
 
     function canEditCurrentEvent() {
         if (!operatorModeActive) return false;
         if (!currentEventId) return true;
-        if (!currentEventPassword) return true;
+        if (currentEventIsTest && !currentEventPassword) return true;
         return Boolean(unlockedEventIds[currentEventId]);
     }
 
     function applyEditStateToUi() {
         const cloud = getCloud();
         const disegno = getDisegno();
+        const gm = getGpsMeteo();
         isEditable = canEditCurrentEvent();
         const lockBtn = document.getElementById("btn-unlock-event");
         const badge = document.getElementById("event-lock-badge");
@@ -531,18 +546,22 @@
 
         if (!operatorModeActive) {
             if (statusEl) statusEl.innerHTML = "Stato: <b>Sola Lettura Libera</b>";
-            if (lockBtn) lockBtn.style.display = "none";
+            if (lockBtn) lockBtn.style.display = (currentEventId && !currentEventIsTest && !isEventUnlocked(currentEventId)) ? "block" : "none";
         } else if (!currentEventId) {
             if (statusEl) statusEl.innerHTML = "Stato: <b>Nuovo Evento (Modifica Attiva)</b>";
-            if (badge) badge.textContent = "Creazione nuovo evento libera con password scelta da Lei.";
+            if (badge) badge.textContent = "Creazione nuovo evento attiva.";
             if (lockBtn) lockBtn.style.display = "none";
+        } else if (!currentEventIsTest && !isEventUnlocked(currentEventId)) {
+            if (statusEl) statusEl.innerHTML = "Stato: <b>Evento Reale Protetto</b>";
+            if (badge) badge.textContent = "Inserire password evento o admin per visualizzare/modificare.";
+            if (lockBtn) lockBtn.style.display = "block";
         } else if (!currentEventPassword || unlockedEventIds[currentEventId]) {
             if (statusEl) statusEl.innerHTML = "Stato: <b>Modifica Evento Sbloccata</b>";
-            if (badge) badge.textContent = currentEventPassword ? "Evento sbloccato con password dedicata." : "Evento aperto (senza password dedicata).";
+            if (badge) badge.textContent = currentEventPassword ? "Evento sbloccato." : "Evento aperto.";
             if (lockBtn) lockBtn.style.display = "none";
         } else {
             if (statusEl) statusEl.innerHTML = "Stato: <b>Evento Protetto (Sola Lettura)</b>";
-            if (badge) badge.textContent = "Questo evento ha una password propria: inseriscila per modificarlo.";
+            if (badge) badge.textContent = "Evento protetto da password dedicata.";
             if (lockBtn) lockBtn.style.display = "block";
         }
 
@@ -552,6 +571,7 @@
         });
         if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
         if (typeof cloud.renderCloudCollaboration === "function") cloud.renderCloudCollaboration(currentEventId);
+        if (typeof gm.aggiornaMarkerOperatoriRemoti === "function") gm.aggiornaMarkerOperatoriRemoti();
 
         Object.keys(markersRegistry).forEach(function(k) {
             const entry = markersRegistry[k];
@@ -580,29 +600,38 @@
     }
 
     function promptUnlockCurrentEvent() {
-        if (!operatorModeActive) {
-            alert("Apra il menu 'Stato', inserisca Nome/Qualifica e clicchi su 'Abilita Modalità Operatore'.");
-            const accAuth = document.getElementById("acc-auth");
-            if (accAuth) accAuth.open = true;
-            return false;
-        }
-        if (!currentEventId || !currentEventPassword) {
+        if (!currentEventId) {
+            if (!operatorModeActive) {
+                alert("Apra il menu 'Stato', inserisca Nome/Qualifica e clicchi su 'Abilita Modalità Operatore'.");
+                const accAuth = document.getElementById("acc-auth");
+                if (accAuth) accAuth.open = true;
+                return false;
+            }
             applyEditStateToUi();
             return true;
         }
-        if (unlockedEventIds[currentEventId]) {
+        if (isEventUnlocked(currentEventId)) {
             applyEditStateToUi();
             return true;
         }
-        const entered = prompt("Inserisca la password impostata per questo evento:");
+        const entered = prompt("Inserisca la password dell'evento oppure la password amministratore:");
         if (entered === null) return false;
-        if (entered !== currentEventPassword) {
-            alert("Password evento errata. L'evento resta in sola lettura.");
+        const okEventPwd = currentEventPassword && entered === currentEventPassword;
+        const okAdminPwd = entered === ADMIN_PASSWORD;
+        if (!okEventPwd && !okAdminPwd) {
+            alert("Password errata.");
             return false;
         }
         unlockedEventIds[currentEventId] = true;
-        applyEditStateToUi();
-        registraLog("Evento sbloccato con password dedicata.");
+        registraLog(okAdminPwd ? "Evento sbloccato con password amministratore." : "Evento sbloccato con password dedicata.");
+        const cloud = getCloud();
+        const list = typeof cloud.safeReadStorage === "function" ? cloud.safeReadStorage() : [];
+        const found = list.find(function(ev) { return ev.id === currentEventId; });
+        if (found) {
+            loadEventIntoMap(found);
+        } else {
+            applyEditStateToUi();
+        }
         return true;
     }
 
@@ -687,12 +716,16 @@
         getOperatorModeActive: function() { return operatorModeActive; },
         getCurrentEventId: function() { return currentEventId; },
         setInitialEventId: function(id) { currentEventId = id || ""; },
-        setCurrentEventState: function(id, pwd) {
+        setCurrentEventState: function(id, pwd, isTest, folder) {
             currentEventId = id || "";
             currentEventPassword = pwd || "";
+            if (typeof isTest === "boolean") currentEventIsTest = isTest;
+            if (typeof folder === "string") currentEventFolder = folder;
         },
         getCurrentEventPassword: function() { return currentEventPassword; },
         getUnlockedEventIds: function() { return unlockedEventIds; },
+        isEventUnlocked: isEventUnlocked,
+        canViewProtectedEventData: canViewProtectedEventData,
         getCurrentOperator: function() { return currentOperator; },
         getCurrentOperatorEmail: function() { return currentOperatorEmail; },
         getCurrentOperatorRole: function() { return currentOperatorRole; },
@@ -769,12 +802,32 @@
             });
         }
 
+        document.getElementById("event-folder-filter").addEventListener("change", function() {
+            if (typeof cloud.refreshEventDropdown === "function") cloud.refreshEventDropdown(currentEventId);
+        });
+
         document.getElementById("event-select").addEventListener("change", function() {
             const chosenId = this.value;
             if (!chosenId) return;
             const list = typeof cloud.safeReadStorage === "function" ? cloud.safeReadStorage() : [];
             const found = list.find(function(ev) { return ev.id === chosenId; });
-            if (found) loadEventIntoMap(found);
+            if (found) {
+                if (!found.isTest && !isEventUnlocked(found.id)) {
+                    currentEventId = found.id;
+                    currentEventPassword = found.editPassword || "";
+                    currentEventIsTest = false;
+                    currentEventFolder = found.folder || "Corteno Golgi";
+                    if (!promptUnlockCurrentEvent()) {
+                        loadEventIntoMap(found);
+                        return;
+                    }
+                }
+                loadEventIntoMap(found);
+            }
+        });
+
+        document.getElementById("btn-create-folder").addEventListener("click", function() {
+            if (typeof cloud.handleCreateFolder === "function") cloud.handleCreateFolder();
         });
 
         document.getElementById("btn-gate-readonly").addEventListener("click", function() {
@@ -891,6 +944,7 @@
         if (typeof disegno.populateSubscenarios === "function") disegno.populateSubscenarios();
         if (typeof disegno.renderSimboli === "function") disegno.renderSimboli();
         if (typeof disegno.renderOverlayControls === "function") disegno.renderOverlayControls();
+        if (typeof cloud.refreshFolderDropdowns === "function") cloud.refreshFolderDropdowns("");
         if (typeof cloud.refreshEventDropdown === "function") cloud.refreshEventDropdown("");
 
         if (typeof L === "undefined") {
@@ -1005,7 +1059,6 @@
 })();
 </script>
 
-<!-- REGISTRAZIONE SERVICE WORKER PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1017,6 +1070,3 @@
 </script>
 </body>
 </html>
-```[cite: 1]
-
-Tutti e 6 i file della struttura modulare sono ora pronti. Desidera che aggiorniamo anche l'elenco delle risorse nel file `sw.js` per includere i nuovi percorsi `css/` e `js/` nella cache offline?
